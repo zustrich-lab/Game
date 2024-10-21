@@ -41,61 +41,11 @@ var platforms = [],
 	dir, score = 0, firstRun = true;
 
 
-    // Изменяем управление на касания или клики
-
-function handleTouchStart(event) {
-    // Определяем, на какой части экрана произошло касание
-    const touchX = event.touches[0].clientX;
-
-    if (touchX < width / 2) {
-        // Если касание слева
-        dir = "left";
-        player.isMovingLeft = true;
-        player.isMovingRight = false;
-    } else {
-        // Если касание справа
-        dir = "right";
-        player.isMovingRight = true;
-        player.isMovingLeft = false;
-    }
-}
-
-function handleTouchEnd() {
-    // Остановка движения, когда палец убран с экрана
-    player.isMovingLeft = false;
-    player.isMovingRight = false;
-}
-
-// Добавляем обработчики событий для касаний экрана
-canvas.addEventListener('touchstart', handleTouchStart);
-canvas.addEventListener('touchend', handleTouchEnd);
-
-// Для поддержки управления на компьютере, также можно добавить клики мышью
-canvas.addEventListener('mousedown', function(event) {
-    const clickX = event.clientX;
-
-    if (clickX < width / 2) {
-        // Левая часть экрана
-        dir = "left";
-        player.isMovingLeft = true;
-    } else {
-        // Правая часть экрана
-        dir = "right";
-        player.isMovingRight = true;
-    }
-});
-
-canvas.addEventListener('mouseup', function() {
-    // Остановка движения, когда кнопка мыши отпущена
-    player.isMovingLeft = false;
-    player.isMovingRight = false;
-});
-
-// Можно также добавить обработку touchmove для плавного управления, если это нужно
+    
 //Base object
 var Base = function() {
 	this.height = 5;
-	this.width = width;
+	this.width = width;ч
 
 	//Sprite clipping
 	this.cx = 0;
@@ -285,6 +235,8 @@ var spring = function() {
 var Spring = new spring();
 
 function init() {
+    window.init = init;
+    
 	//Variables for the game
 	var	dir = "left",
 		jumpCount = 0;
@@ -553,6 +505,7 @@ function init() {
 }
 
 function reset() {
+    window.init = reset;
 	hideGoMenu();
 	showScore();
 	player.isDead = false;

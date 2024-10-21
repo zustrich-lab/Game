@@ -45,7 +45,6 @@
         </div>
     </div>
 
-    <!-- Вставка JavaScript -->
     <script>
   // RequestAnimFrame: a browser API for getting smooth animations
 window.requestAnimFrame = (function() {
@@ -533,6 +532,39 @@ function init() {
 
 	hideMenu();
 	showScore();
+}
+document.addEventListener('touchstart', handleTouchStart, false);
+document.addEventListener('touchmove', handleTouchMove, false);
+document.addEventListener('touchend', handleTouchEnd, false);
+
+let touchX = null;
+
+function handleTouchStart(evt) {
+    touchX = evt.touches[0].clientX;
+}
+
+function handleTouchMove(evt) {
+    if (touchX) {
+        let currentX = evt.touches[0].clientX;
+        
+        // Если касание было на левой стороне экрана
+        if (currentX < touchX) {
+            player.isMovingLeft = true;
+            player.isMovingRight = false;
+        } 
+        // Если касание было на правой стороне экрана
+        else if (currentX > touchX) {
+            player.isMovingRight = true;
+            player.isMovingLeft = false;
+        }
+    }
+}
+
+function handleTouchEnd(evt) {
+    // Остановка движения при завершении касания
+    player.isMovingLeft = false;
+    player.isMovingRight = false;
+    touchX = null;
 }
 
 function reset() {
