@@ -109,6 +109,26 @@ var Base = function() {
 
 var base = new Base();
 
+// Класс Монета
+// Глобальная переменная для изображения монеты
+var coinImage = new Image();
+coinImage.src = './Img/coin.png';
+
+// Класс Монета
+function Coin(platform) {
+    this.width = 20;
+    this.height = 20;
+    this.x = platform.x + platform.width / 2 - this.width / 2;
+    this.y = platform.y - this.height;
+
+    // Метод для рисования монеты
+    this.draw = function() {
+        if (coinImage.complete) { // Проверяем, загружено ли изображение
+            ctx.drawImage(coinImage, this.x, this.y, this.width, this.height);
+        }
+    };
+}
+
 //Player object
 var Player = function() {
 	this.vy = 11;
