@@ -129,6 +129,8 @@ function Coin(platform) {
     };
 }
 
+
+
 //Player object
 var Player = function() {
 	this.vy = 11;
@@ -177,6 +179,8 @@ var Player = function() {
 player = new Player();
 
 //Platform class
+var coins = []; // Массив для хранения монет
+
 
 function Platform() {
 	this.width = 70;
@@ -195,7 +199,13 @@ function Platform() {
 	this.cy = 0;
 	this.cwidth = 105;
 	this.cheight = 31;
+	this.coin = null;
 
+// Вероятность появления монеты 5%
+if (Math.random() < 0.05) {
+	this.coin = new Coin(this);
+	coins.push(this.coin);
+}
 	//Function to draw it
 	this.draw = function() {
 		try {
@@ -240,6 +250,25 @@ function Platform() {
 
 for (var i = 0; i < platformCount; i++) {
 	platforms.push(new Platform());
+}
+
+function updateCoins() {
+    coins.forEach(function(coin, index) {
+        // Проверяем, собирает ли игрок монету
+        if (
+            player.x < coin.x + coin.width &&
+            player.x + player.width > coin.x &&
+            player.y < coin.y + coin.height &&
+            player.y + player.height > coin.y
+        ) {
+            // Монета собрана
+            coins.splice(index, 1); // Удаляем монету из массива
+            score += 100; // Увеличиваем счет игрока
+        }
+
+        // Рисуем монету
+        coin.draw();
+    });
 }
 
 //Broken platform object
@@ -574,6 +603,7 @@ function handleTouchEnd() {
 		base.draw();
 
 		updateScore();
+		updateCoins();
 	}
 
 	menuLoop = function(){return;};
