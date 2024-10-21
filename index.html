@@ -267,26 +267,6 @@ var spring = function() {
 var Spring = new spring();
 
 function init() {
-	function handleTouchStart(evt) {
-    // Определяем, в какую сторону двигаться в зависимости от того, где было касание
-    let touchX = evt.touches[0].clientX;
-    
-    if (touchX < window.innerWidth / 2) {
-        // Если касание в левой половине экрана - движение влево
-        player.isMovingLeft = true;
-        player.isMovingRight = false;
-    } else {
-        // Если касание в правой половине экрана - движение вправо
-        player.isMovingRight = true;
-        player.isMovingLeft = false;
-    }
-}
-
-function handleTouchEnd() {
-    // Остановка движения, когда палец убран с экрана
-    player.isMovingLeft = false;
-    player.isMovingRight = false;
-}
 	//Variables for the game
 	var	dir = "left",
 		jumpCount = 0;
@@ -556,7 +536,27 @@ function handleTouchEnd() {
 document.addEventListener('touchstart', handleTouchStart, false);
 document.addEventListener('touchend', handleTouchEnd, false);
 
+function handleTouchStart(evt) {
+    let touchX = evt.touches[0].clientX;
+    
+    if (touchX < window.innerWidth / 2) {
+        // Движение влево
+        player.isMovingLeft = true;
+        player.isMovingRight = false;
+        player.dir = "left";  // Меняем направление на "влево"
+    } else {
+        // Движение вправо
+        player.isMovingRight = true;
+        player.isMovingLeft = false;
+        player.dir = "right";  // Меняем направление на "вправо"
+    }
+}
 
+function handleTouchEnd() {
+    // Остановка движения
+    player.isMovingLeft = false;
+    player.isMovingRight = false;
+}
 
 function reset() {
 	hideGoMenu();
