@@ -20,6 +20,8 @@ window.requestAnimFrame = (function() {
 	};
 })();
 
+
+
 var canvas = document.getElementById('canvas'),
 	ctx = canvas.getContext('2d');
 
@@ -45,7 +47,7 @@ var platforms = [],
 //Base object
 var Base = function() {
 	this.height = 5;
-	this.width = width;ч
+	this.width = width;
 
 	//Sprite clipping
 	this.cx = 0;
