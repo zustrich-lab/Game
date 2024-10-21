@@ -533,6 +533,21 @@ function init() {
 	hideMenu();
 	showScore();
 }
+
+player.draw = function() {
+    try {
+        if (this.dir == "right") {
+            this.cy = 121;  // Спрайт для движения вправо
+        } else if (this.dir == "left") {
+            this.cy = 201;  // Спрайт для движения влево
+        }
+
+        // Отрисовка спрайта
+        ctx.drawImage(image, this.cx, this.cy, this.cwidth, this.cheight, this.x, this.y, this.width, this.height);
+    } catch (e) {
+        console.error(e);
+    }
+};
 document.addEventListener('touchstart', handleTouchStart, false);
 document.addEventListener('touchend', handleTouchEnd, false);
 
