@@ -232,42 +232,60 @@ var spring = function() {
 
 var Spring = new spring();
 
-function init() {
+// Изменяем управление на касания или клики
 
-    document.addEventListener('touchstart', handleTouchStart, false);
-  document.addEventListener('touchend', handleTouchEnd, false);
-
-  var isTouchLeft = false;
-  var isTouchRight = false;
-
-  // Функция для обработки начала касания
-  function handleTouchStart(event) {
+function handleTouchStart(event) {
+    // Определяем, на какой части экрана произошло касание
     const touchX = event.touches[0].clientX;
-    const screenWidth = window.innerWidth;
 
-    // Определяем, с какой стороны экрана произошло касание
-    if (touchX < screenWidth / 2) {
-      // Левое касание
-      isTouchLeft = true;
-      player.isMovingLeft = true;
+    if (touchX < width / 2) {
+        // Если касание слева
+        dir = "left";
+        player.isMovingLeft = true;
+        player.isMovingRight = false;
     } else {
-      // Правое касание
-      isTouchRight = true;
-      player.isMovingRight = true;
+        // Если касание справа
+        dir = "right";
+        player.isMovingRight = true;
+        player.isMovingLeft = false;
     }
-  }
+}
 
-  // Функция для обработки конца касания
-  function handleTouchEnd() {
-    if (isTouchLeft) {
-      player.isMovingLeft = false;
-      isTouchLeft = false;
+function handleTouchEnd() {
+    // Остановка движения, когда палец убран с экрана
+    player.isMovingLeft = false;
+    player.isMovingRight = false;
+}
+
+// Добавляем обработчики событий для касаний экрана
+canvas.addEventListener('touchstart', handleTouchStart);
+canvas.addEventListener('touchend', handleTouchEnd);
+
+// Для поддержки управления на компьютере, также можно добавить клики мышью
+canvas.addEventListener('mousedown', function(event) {
+    const clickX = event.clientX;
+
+    if (clickX < width / 2) {
+        // Левая часть экрана
+        dir = "left";
+        player.isMovingLeft = true;
+    } else {
+        // Правая часть экрана
+        dir = "right";
+        player.isMovingRight = true;
     }
-    if (isTouchRight) {
-      player.isMovingRight = false;
-      isTouchRight = false;
-    }
-  }
+});
+
+canvas.addEventListener('mouseup', function() {
+    // Остановка движения, когда кнопка мыши отпущена
+    player.isMovingLeft = false;
+    player.isMovingRight = false;
+});
+
+// Можно также добавить обработку touchmove для плавного управления, если это нужно
+
+function init() {
+    
 	//Variables for the game
 	var	dir = "left",
 		jumpCount = 0;
