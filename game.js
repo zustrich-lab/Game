@@ -233,6 +233,41 @@ var spring = function() {
 var Spring = new spring();
 
 function init() {
+
+    document.addEventListener('touchstart', handleTouchStart, false);
+  document.addEventListener('touchend', handleTouchEnd, false);
+
+  var isTouchLeft = false;
+  var isTouchRight = false;
+
+  // Функция для обработки начала касания
+  function handleTouchStart(event) {
+    const touchX = event.touches[0].clientX;
+    const screenWidth = window.innerWidth;
+
+    // Определяем, с какой стороны экрана произошло касание
+    if (touchX < screenWidth / 2) {
+      // Левое касание
+      isTouchLeft = true;
+      player.isMovingLeft = true;
+    } else {
+      // Правое касание
+      isTouchRight = true;
+      player.isMovingRight = true;
+    }
+  }
+
+  // Функция для обработки конца касания
+  function handleTouchEnd() {
+    if (isTouchLeft) {
+      player.isMovingLeft = false;
+      isTouchLeft = false;
+    }
+    if (isTouchRight) {
+      player.isMovingRight = false;
+      isTouchRight = false;
+    }
+  }
 	//Variables for the game
 	var	dir = "left",
 		jumpCount = 0;
