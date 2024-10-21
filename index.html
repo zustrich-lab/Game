@@ -53,16 +53,25 @@ window.requestAnimFrame = (function() {
 		window.setTimeout(callback, 1000 / 60);
 	};
 })();
-
+// Получаем элемент canvas
 var canvas = document.getElementById('canvas'),
-	ctx = canvas.getContext('2d');
+    ctx = canvas.getContext('2d');
 
-var width = 422,
-	height = 552;
+// Функция для изменения размеров canvas на весь экран
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
 
-canvas.width = width;
-canvas.height = height;
+// Вызов функции для обновления размеров холста
+resizeCanvas();
 
+// Изменение размеров при изменении размеров окна
+window.addEventListener('resize', resizeCanvas);
+
+// Далее идут ваши игровые функции и логика...
+var width = canvas.width,
+    height = canvas.height;
 //Variables for game
 var platforms = [],
 	image = document.getElementById("sprite"),
