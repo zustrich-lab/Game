@@ -278,6 +278,12 @@
                 this.staticEnemy = new StaticEnemy(this);
             }
 
+            // Метод для удаления статического противника
+            this.removeStaticEnemy = function() {
+                this.staticEnemy = null;
+                this.hasStaticEnemy = false;
+            };
+
             this.draw = function() {
                 try {
                     if (this.type == 1) this.cy = 0;
@@ -586,6 +592,7 @@
             function collides() {
                 // Столкновения с платформами
                 platforms.forEach(function(p, i) {
+                    // Столкновение с платформой
                     if (player.vy > 0 && p.state === 0 &&
                         (player.x + 15 < p.x + p.width) &&
                         (player.x + player.width - 15 > p.x) &&
@@ -602,6 +609,24 @@
                         } else if (p.flag == 1) return;
                         else {
                             player.jump();
+                        }
+                    }
+
+                    // Столкновение с противником
+                    if (p.hasStaticEnemy && p.staticEnemy) {
+                        if (checkCollision(player, p.staticEnemy)) {
+                            // Определяем направление столкновения
+                            // Если игрок падает (vy > 0) и находится сверху противника
+                            if (player.vy > 0 && (player.y + player.height - player.vy <= p.staticEnemy.y)) {
+                                // Игрок прыгает
+                                player.jump();
+
+                                // Удаляем противника
+                                p.removeStaticEnemy();
+                            } else {
+                                // Игрок погибает
+                                player.isDead = true;
+                            }
                         }
                     }
                 });
@@ -639,19 +664,20 @@
                 platforms.forEach(function(p) {
                     if (p.hasStaticEnemy && p.staticEnemy) {
                         if (checkCollision(player, p.staticEnemy)) {
-                            player.isDead = true;
+                            // Определяем направление столкновения
+                            if (player.vy > 0 && (player.y + player.height - player.vy <= p.staticEnemy.y)) {
+                                // Игрок прыгает
+                                player.jump();
+
+                                // Удаляем противника
+                                p.removeStaticEnemy();
+                            } else {
+                                // Игрок погибает
+                                player.isDead = true;
+                            }
                         }
                     }
                 });
-
-                // Удалено: Столкновения с ScreenEnemy
-                /*
-                screenEnemies.forEach(function(se) {
-                    if (checkCollision(player, se)) {
-                        player.isDead = true;
-                    }
-                });
-                */
             }
 
             // Функция проверки столкновения
