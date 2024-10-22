@@ -307,6 +307,14 @@
                 }
             }
 
+            // Добавленный метод для удаления статического противника
+            this.removeStaticEnemy = function() {
+                this.hasStaticEnemy = false;
+                this.staticEnemy = null;
+                score += 200; // Дополнительные очки за уничтожение противника
+                console.log('Противник уничтожен! Очки:', score);
+            }
+
             this.draw = function() {
                 try {
                     if (this.type == 1) this.cy = 0;
@@ -388,8 +396,6 @@
 
         var platform_broken_substitute = new Platform_broken_substitute();
 
-        // Класс игрока уже определен выше
-
         // Функция инициализации игры
         function init() {
             // Переменные для игры
@@ -399,7 +405,7 @@
             firstRun = false;
             // Удалено: coins = [];
 
-            // Удалено: screenEnemies = []; // Список ScreenEnemy
+            // Удалено: screenEnemies = []; // Сброс списка ScreenEnemy
 
             // Функция очистки холста
             function paintCanvas() {
@@ -622,13 +628,13 @@
                         if (checkCollision(player, p.staticEnemy)) {
                             // Определяем направление столкновения
                             if (player.vy > 0 && (player.y + player.height - player.vy <= p.staticEnemy.y)) {
-                                // Игрок прыгает
+                                // Игрок прыгает на противника
                                 player.jump();
 
                                 // Удаляем противника
                                 p.removeStaticEnemy();
                             } else {
-                                // Игрок погибает
+                                // Столкновение с другой стороны – игрок погибает
                                 player.isDead = true;
                             }
                         }
