@@ -39,7 +39,7 @@
         <!-- Предзагрузка изображений -->
         <img id="sprite" src="./Img/undefined - Imgur-2.png" style="display: none;"/>
         <img id="enemyStatic" src="./Img/enemy.png" style="display: none;"/> <!-- Статический противник -->
-        <img id="enemyScreen" src="./Img/movingenemy.png" style="display: none;"/> <!-- Новый движущийся противник -->
+        <!-- Удалено: <img id="enemyScreen" src="./Img/enemy_screen.png" style="display: none;"/> -->
 
         <div id="scoreBoard">
             <p id="score">0</p>
@@ -81,7 +81,6 @@
         var platforms = [],
             image = document.getElementById("sprite"),
             enemyStaticImage = document.getElementById("enemyStatic"),
-            enemyScreenImage = document.getElementById("enemyScreen"),
             player,
             platformCount = 10,
             position = 0,
@@ -93,7 +92,7 @@
             score = 0,
             firstRun = true;
 
-        var screenEnemies = []; // Список ScreenEnemy
+        // Удалено: var screenEnemies = []; // Список ScreenEnemy
 
         // Объект базы
         var Base = function() {
@@ -180,54 +179,7 @@
             };
         }
 
-        // Класс СкринПротивника (ScreenEnemy)
-        function ScreenEnemy() {
-            this.width = 40; // Ширина противника
-            this.height = 40; // Высота противника
-
-            // Определяем, с какой стороны начинается противник
-            this.direction = Math.random() < 0.5 ? 'left' : 'right';
-            if (this.direction === 'left') {
-                this.x = 0 - this.width; // Начинает с левого края экрана
-                this.vx = 3; // Скорость вправо
-            } else {
-                this.x = width; // Начинает с правого края экрана
-                this.vx = -3; // Скорость влево
-            }
-
-            // Фиксированная y-позиция (не изменяется при движении платформ)
-            this.y = Math.random() * (height - 100) + 50;
-
-            // Загрузка изображения ScreenEnemy
-            this.image = enemyScreenImage; // Предзагруженное изображение
-
-            this.draw = function() {
-                try {
-                    ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
-                } catch (e) {
-                    console.error('Ошибка при отрисовке ScreenEnemy:', e);
-                }
-            };
-
-            this.update = function() {
-                this.x += this.vx;
-
-                // Разворот при достижении края экрана
-                if (this.direction === 'left' && this.x + this.width >= width) {
-                    this.direction = 'right';
-                    this.vx = -this.vx; // Меняем направление движения
-                } else if (this.direction === 'right' && this.x <= 0 - this.width) {
-                    this.direction = 'left';
-                    this.vx = -this.vx; // Меняем направление движения
-                }
-
-                // Удаляем противника, если он полностью вышел за пределы экрана (для оптимизации)
-                if ((this.direction === 'left' && this.x > width + this.width) ||
-                    (this.direction === 'right' && this.x < -this.width)) {
-                    this.toRemove = true;
-                }
-            };
-        }
+        // Удалено: Класс ScreenEnemy
 
         // Класс игрока
         var Player = function() {
@@ -431,10 +383,9 @@
                 jumpCount = 0;
             
             firstRun = false;
-            // Удалите или закомментируйте следующую строку
-            // coins = [];
+            // Удалено: coins = [];
 
-            screenEnemies = []; // Инициализация списка ScreenEnemy
+            // Удалено: screenEnemies = []; // Список ScreenEnemy
 
             // Функция очистки холста
             function paintCanvas() {
@@ -693,12 +644,14 @@
                     }
                 });
 
-                // Столкновения с ScreenEnemy
+                // Удалено: Столкновения с ScreenEnemy
+                /*
                 screenEnemies.forEach(function(se) {
                     if (checkCollision(player, se)) {
                         player.isDead = true;
                     }
                 });
+                */
             }
 
             // Функция проверки столкновения
@@ -751,11 +704,16 @@
                 base.draw();
                 updateScore();
 
+                // Удалено: Спавн нового ScreenEnemy
+                /*
                 // Спавн нового ScreenEnemy с вероятностью 10%
                 if (Math.random() < 0.1) { // 10% вероятность
                     screenEnemies.push(new ScreenEnemy());
                 }
+                */
 
+                // Удалено: Обновление и отрисовка ScreenEnemy
+                /*
                 // Обновление и отрисовка ScreenEnemy
                 for (var i = screenEnemies.length - 1; i >= 0; i--) {
                     screenEnemies[i].update();
@@ -771,6 +729,7 @@
                         screenEnemies.splice(i, 1);
                     }
                 }
+                */
             }
 
             animloop = function() {
@@ -800,12 +759,11 @@
             platform_broken_substitute = new Platform_broken_substitute();
 
             platforms = [];
-            screenEnemies = []; // Сброс списка ScreenEnemy
+            // Удалено: screenEnemies = []; // Сброс списка ScreenEnemy
             for (var i = 0; i < platformCount; i++) {
                 platforms.push(new Platform());
             }
-            // Удалите или закомментируйте следующую строку
-            // coins = [];
+            // Удалено: coins = [];
         }
 
         // Функции управления меню
