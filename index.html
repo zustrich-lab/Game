@@ -22,7 +22,7 @@
                 Use
                 <span class="key left">←</span>
                 <span class="key right">→</span>
-                fore movinf and (re) start the game
+                for moving and (re)start the game
             </p>
             <a class="button" href="javascript:init()">Play</a>
         </div>
@@ -32,9 +32,9 @@
             <h3 id="go_score">You have 0 scores</h3>
 
             <a class="button" href="javascript:reset()">Restart</a>
-            <a id="tweetBtn" target="_blank" class="button tweet" href="#">Twitt results</a>
+            <a id="tweetBtn" target="_blank" class="button tweet" href="#">Tweet results</a>
 
-            <a id="fbBtn" target="_blank" class="button fb" href="#">Post in facebook</a>
+            <a id="fbBtn" target="_blank" class="button fb" href="#">Post on Facebook</a>
         </div>
         
         <!-- Предзагрузка изображения -->
@@ -84,8 +84,8 @@
             position = 0,
             gravity = 0.2,
             animloop,
+            menuLoop, // Изменено на menuLoop
             flag = 0,
-            menuloop,
             broken = 0,
             dir,
             score = 0,
@@ -140,9 +140,56 @@
 
             this.collect = function() {
                 this.collected = true;
-                score += 1000000; // добавляем 10 очков за сбор монеты
+                score += 100; // добавляем 100 очков за сбор монеты
                 // Опционально: добавить звук или анимацию сбора монеты
                 console.log('Монета собрана! Очки:', score);
+            };
+        }
+
+        // Класс Противника
+        function Enemy(platform, isMoving = false) {
+            this.width = 40; // ширина противника
+            this.height = 40; // высота противника
+
+            this.platform = platform; // ссылка на платформу
+
+            // Изначальная позиция противника относительно платформы
+            this.x = this.platform.x + (this.platform.width - this.width) / 2;
+            this.y = this.platform.y - this.height - 10;
+
+            this.isMoving = isMoving; // определяет, движется ли противник
+
+            // Скорость движения противника
+            this.vx = 2;
+
+            // Направление движения: 1 - вправо, -1 - влево
+            this.direction = 1;
+
+            // Загрузка изображения противника
+            this.image = new Image();
+            this.image.src = './Img/enemy.png'; // Убедитесь, что путь к изображению правильный
+
+            this.draw = function() {
+                try {
+                    ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+                } catch (e) {
+                    console.error('Ошибка при отрисовке противника:', e);
+                }
+            };
+
+            this.update = function() {
+                if (this.isMoving) {
+                    // Движение противника
+                    this.x += this.vx * this.direction;
+
+                    // Проверка границ платформы
+                    if (this.x <= this.platform.x || this.x + this.width >= this.platform.x + this.platform.width) {
+                        this.direction *= -1; // смена направления
+                    }
+                }
+
+                // Обновление позиции относительно платформы
+                this.y = this.platform.y - this.height - 10;
             };
         }
 
@@ -232,12 +279,19 @@
             this.moved = 0;
             this.vx = 1;
 
-            // Привязка монеты к платформе с 5% вероятностью
-            if (Math.random() < 0.5) { // 5% вероятность
+            // Привязка монеты к платформе с 50% вероятностью
+            if (Math.random() < 0.5) { // 50% вероятность
                 this.coin = new Coin(this);
             }
 
-            // Функция отрисовки платформы и монеты
+            // Привязка противника к платформе с 20% вероятностью
+            this.hasEnemy = Math.random() < 0.2;
+            if (this.hasEnemy) {
+                // Определяем, будет ли противник движущимся или статичным (например, 50% шанс)
+                let isMoving = Math.random() < 0.5;
+                this.enemy = new Enemy(this, isMoving);
+            }
+
             this.draw = function() {
                 try {
                     if (this.type == 1) this.cy = 0;
@@ -253,8 +307,26 @@
                     if (this.coin && !this.coin.collected) {
                         this.coin.draw();
                     }
+
+                    // Рисуем противника, если он есть
+                    if (this.hasEnemy && this.enemy) {
+                        this.enemy.draw();
+                    }
                 } catch (e) {
-                    console.error('Ошибка при отрисовке платформы или монеты:', e);
+                    console.error('Ошибка при отрисовке платформы, монеты или противника:', e);
+                }
+            };
+
+            this.update = function() {
+                if (this.hasEnemy && this.enemy) {
+                    this.enemy.update();
+                }
+
+                // Горизонтальное движение платформы
+                if (this.type == 2) {
+                    if (this.x < 0 || this.x + this.width > width) this.vx *= -1;
+
+                    this.x += this.vx;
                 }
             };
         }
@@ -404,18 +476,14 @@
 
                 // Ускорение при удерживании клавиш
                 if (player.isMovingLeft === true) {
-                    player.x += player.vx;
                     player.vx -= 0.15;
                 } else {
-                    player.x += player.vx;
                     if (player.vx < 0) player.vx += 0.1;
                 }
 
                 if (player.isMovingRight === true) {
-                    player.x += player.vx;
                     player.vx += 0.15;
                 } else {
-                    player.x += player.vx;
                     if (player.vx > 0) player.vx -= 0.1;
                 }
 
@@ -424,6 +492,9 @@
                     player.vx = 8;
                 else if(player.vx < -8)
                     player.vx = -8;
+
+                // Обновление позиции игрока
+                player.x += player.vx;
 
                 // Прыжок игрока при столкновении с базой
                 if ((player.y + player.height) > base.y && base.y < height) player.jump();
@@ -497,10 +568,10 @@
                 var subs = platform_broken_substitute;
 
                 platforms.forEach(function(p, i) {
-                    if (p.type == 2) {
-                        if (p.x < 0 || p.x + p.width > width) p.vx *= -1;
+                    p.update(); // Обновляем платформу и противника
 
-                        p.x += p.vx;
+                    if (p.type == 2) {
+                        // Уже обработано в методе update()
                     }
 
                     if (p.flag == 1 && subs.appearance === false && jumpCount === 0) {
@@ -574,6 +645,25 @@
                         }
                     }
                 });
+
+                // Столкновения с противниками
+                platforms.forEach(function(p) {
+                    if (p.hasEnemy && p.enemy) {
+                        if (checkCollision(player, p.enemy)) {
+                            player.isDead = true;
+                        }
+                    }
+                });
+            }
+
+            // Функция проверки столкновения
+            function checkCollision(player, enemy) {
+                return (
+                    player.x < enemy.x + enemy.width &&
+                    player.x + player.width > enemy.x &&
+                    player.y < enemy.y + enemy.height &&
+                    player.y + player.height > enemy.y
+                );
             }
 
             // Функция обновления счета
@@ -603,7 +693,6 @@
                 
                     var facebook = document.getElementById("fbBtn");
                     facebook.href='https://facebook.com/sharer.php?s=100&p[url]=http://cssdeck.com/labs/html5-doodle-jump/8&p[title]=I just scored ' +score+ ' points in the HTML5 Doodle Jump game!&p[summary]=Can you beat me in this awesome recreation of Doodle Jump created in HTML5?';
-
                 }
             }
 
@@ -616,31 +705,8 @@
                 player.draw();
                 base.draw();
                 updateScore();
-
-                // Обрабатываем монеты, привязанные к платформам
-                platforms.forEach(function(p) {
-                    if (p.coin && !p.coin.collected) {
-                        p.coin.draw();
-
-                        // Проверка коллизии между игроком и монетой
-                        let coinX = p.x + (p.width - p.coin.width) / 2;
-                        let coinY = p.y - p.coin.height - 10;
-
-                        if (
-                            player.x < coinX + p.coin.width &&
-                            player.x + player.width > coinX &&
-                            player.y < coinY + p.coin.height &&
-                            player.y + player.height > coinY
-                        ) {
-                            p.coin.collect();
-                            // Опционально: добавить анимацию или звук сбора монеты
-                            // console.log('Монета собрана! Очки:', score);
-                        }
-                    }
-                });
             }
 
-            menuloop = function(){return;};
             animloop = function() {
                 update();
                 requestAnimFrame(animloop);
@@ -707,18 +773,16 @@
             menu.style.zIndex = -1;
         }
 
-        // Убедитесь, что обработчики событий не дублируются
-        // Удалите или закомментируйте следующие строки, если они уже добавлены внутри функции init
-        // document.addEventListener('touchstart', handleTouchStart, false);
-        // document.addEventListener('touchend', handleTouchEnd, false);
-
         // Запуск меню
-        menuloop = function() {
+        menuLoop = function() { // Переименовано на menuLoop
             update();
-            requestAnimFrame(menuloop);
+            requestAnimFrame(menuLoop);
         };
 
-        menuLoop();
+        // Вызов функции menuLoop вместо undefined menuLoop()
+        // Если хотите запустить меню, например, анимацию до начала игры
+        // В противном случае, эта часть может быть лишней, если игра уже запускается через init()
+        // menuLoop();
     </script>
 </body>
 </html>
