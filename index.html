@@ -37,8 +37,11 @@
             <a id="fbBtn" target="_blank" class="button fb" href="#">Post on Facebook</a>
         </div>
         
-        <!-- Предзагрузка изображения -->
+        <!-- Предзагрузка изображений -->
         <img id="sprite" src="./Img/undefined - Imgur-2.png" style="display: none;"/>
+        <img id="enemyStatic" src="./Img/enemy.png" style="display: none;"/> <!-- Статический противник -->
+        <img id="enemyMoving" src="./Img/enemy_moving.png" style="display: none;"/> <!-- Движущийся противник -->
+        <img id="enemyScreen" src="./Img/movingenemy.png" style="display: none;"/> <!-- Новый движущийся противник -->
 
         <div id="scoreBoard">
             <p id="score">0</p>
@@ -79,17 +82,21 @@
 
         var platforms = [],
             image = document.getElementById("sprite"),
+            enemyStaticImage = document.getElementById("enemyStatic"),
+            enemyMovingImage = document.getElementById("enemyMoving"),
+            enemyScreenImage = document.getElementById("enemyScreen"),
             player,
             platformCount = 10,
             position = 0,
             gravity = 0.2,
             animloop,
-            menuLoop, // Изменено на menuLoop
             flag = 0,
             broken = 0,
             dir,
             score = 0,
             firstRun = true;
+
+        var screenEnemies = []; // Список ScreenEnemy
 
         // Объект базы
         var Base = function() {
@@ -146,50 +153,124 @@
             };
         }
 
-        // Класс Противника
-        function Enemy(platform, isMoving = false) {
+        // Класс Статического Противника
+        function StaticEnemy(platform) {
             this.width = 40; // ширина противника
             this.height = 40; // высота противника
 
             this.platform = platform; // ссылка на платформу
 
-            // Изначальная позиция противника относительно платформы
+            // Позиция противника относительно платформы
             this.x = this.platform.x + (this.platform.width - this.width) / 2;
             this.y = this.platform.y - this.height - 10;
 
-            this.isMoving = isMoving; // определяет, движется ли противник
-
-            // Скорость движения противника
-            this.vx = 2;
-
-            // Направление движения: 1 - вправо, -1 - влево
-            this.direction = 1;
-
-            // Загрузка изображения противника
-            this.image = new Image();
-            this.image.src = './Img/enemy.png'; // Убедитесь, что путь к изображению правильный
+            // Загрузка изображения статического противника
+            this.image = enemyStaticImage;
 
             this.draw = function() {
                 try {
                     ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
                 } catch (e) {
-                    console.error('Ошибка при отрисовке противника:', e);
+                    console.error('Ошибка при отрисовке статического противника:', e);
+                }
+            };
+
+            // Метод обновления позиции (нет необходимости для статического противника)
+            this.update = function() {
+                // Обновляем позицию относительно платформы
+                this.x = this.platform.x + (this.platform.width - this.width) / 2;
+                this.y = this.platform.y - this.height - 10;
+            };
+        }
+
+        // Класс Движущегося Противника
+        function MovingEnemy(platform) {
+            this.width = 40; // ширина противника
+            this.height = 40; // высота противника
+
+            this.platform = platform; // ссылка на платформу
+
+            // Начальная позиция движущегося противника относительно платформы
+            this.x = platform.x; // Начинает с левого края платформы
+            this.y = platform.y - this.height - 10; // На платформе
+
+            // Скорость движения противника
+            this.vx = 3;
+
+            // Направление движения: 1 - вправо, -1 - влево
+            this.direction = 1;
+
+            // Загрузка изображения движущегося противника
+            this.image = enemyMovingImage;
+
+            this.draw = function() {
+                try {
+                    ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+                } catch (e) {
+                    console.error('Ошибка при отрисовке движущегося противника:', e);
                 }
             };
 
             this.update = function() {
-                if (this.isMoving) {
-                    // Движение противника
-                    this.x += this.vx * this.direction;
+                // Движение противника
+                this.x += this.vx * this.direction;
 
-                    // Проверка границ платформы
-                    if (this.x <= this.platform.x || this.x + this.width >= this.platform.x + this.platform.width) {
-                        this.direction *= -1; // смена направления
-                    }
+                // Проверка границ платформы
+                if (this.x <= this.platform.x || this.x + this.width >= this.platform.x + this.platform.width) {
+                    this.direction *= -1; // смена направления
                 }
 
                 // Обновление позиции относительно платформы
                 this.y = this.platform.y - this.height - 10;
+            };
+        }
+
+        // Класс СкринПротивника (ScreenEnemy)
+        function ScreenEnemy() {
+            this.width = 40; // Ширина противника
+            this.height = 40; // Высота противника
+
+            // Определяем, с какой стороны начинается противник
+            this.direction = Math.random() < 0.5 ? 'left' : 'right';
+            if (this.direction === 'left') {
+                this.x = 0 - this.width; // Начинает с левого края экрана
+                this.vx = 3; // Скорость вправо
+            } else {
+                this.x = width; // Начинает с правого края экрана
+                this.vx = -3; // Скорость влево
+            }
+
+            // Случайная y-позиция, чтобы противник не был слишком близко к верхнему или нижнему краю
+            this.y = Math.random() * (height - 100) + 50;
+
+            // Загрузка изображения ScreenEnemy
+            this.image = enemyScreenImage; // Предзагруженное изображение
+
+            this.draw = function() {
+                try {
+                    ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+                } catch (e) {
+                    console.error('Ошибка при отрисовке ScreenEnemy:', e);
+                }
+            };
+
+            this.update = function() {
+                this.x += this.vx;
+
+                // Разворот при достижении края экрана
+                if (this.direction === 'left' && this.x + this.width >= width) {
+                    this.direction = 'right';
+                    this.vx = -this.vx; // Меняем направление движения
+                } else if (this.direction === 'right' && this.x <= 0 - this.width) {
+                    this.direction = 'left';
+                    this.vx = -this.vx; // Меняем направление движения
+                }
+
+                // Удаляем противника, если он полностью вышел за пределы экрана (для оптимизации)
+                if ((this.direction === 'left' && this.x > width + this.width) ||
+                    (this.direction === 'right' && this.x < -this.width)) {
+                    this.toRemove = true;
+                }
             };
         }
 
@@ -284,12 +365,16 @@
                 this.coin = new Coin(this);
             }
 
-            // Привязка противника к платформе с 20% вероятностью
-            this.hasEnemy = Math.random() < 0.2;
-            if (this.hasEnemy) {
-                // Определяем, будет ли противник движущимся или статичным (например, 50% шанс)
-                let isMoving = Math.random() < 0.5;
-                this.enemy = new Enemy(this, isMoving);
+            // Привязка статического противника к платформе с 20% вероятностью
+            this.hasStaticEnemy = Math.random() < 0.2;
+            if (this.hasStaticEnemy) {
+                this.staticEnemy = new StaticEnemy(this);
+            }
+
+            // Привязка движущегося противника к платформе с 10% вероятностью
+            this.hasMovingEnemy = Math.random() < 0.1;
+            if (this.hasMovingEnemy) {
+                this.movingEnemy = new MovingEnemy(this);
             }
 
             this.draw = function() {
@@ -308,9 +393,14 @@
                         this.coin.draw();
                     }
 
-                    // Рисуем противника, если он есть
-                    if (this.hasEnemy && this.enemy) {
-                        this.enemy.draw();
+                    // Рисуем статического противника, если он есть
+                    if (this.hasStaticEnemy && this.staticEnemy) {
+                        this.staticEnemy.draw();
+                    }
+
+                    // Рисуем движущегося противника, если он есть
+                    if (this.hasMovingEnemy && this.movingEnemy) {
+                        this.movingEnemy.draw();
                     }
                 } catch (e) {
                     console.error('Ошибка при отрисовке платформы, монеты или противника:', e);
@@ -318,15 +408,21 @@
             };
 
             this.update = function() {
-                if (this.hasEnemy && this.enemy) {
-                    this.enemy.update();
-                }
-
-                // Горизонтальное движение платформы
+                // Обновляем платформу
                 if (this.type == 2) {
                     if (this.x < 0 || this.x + this.width > width) this.vx *= -1;
 
                     this.x += this.vx;
+                }
+
+                // Обновляем статического противника
+                if (this.hasStaticEnemy && this.staticEnemy) {
+                    this.staticEnemy.update();
+                }
+
+                // Обновляем движущегося противника
+                if (this.hasMovingEnemy && this.movingEnemy) {
+                    this.movingEnemy.update();
                 }
             };
         }
@@ -398,6 +494,8 @@
             firstRun = false;
             // Удалите или закомментируйте следующую строку
             // coins = [];
+
+            screenEnemies = []; // Инициализация списка ScreenEnemy
 
             // Функция очистки холста
             function paintCanvas() {
@@ -518,7 +616,9 @@
 
                         if (player.vy < 0) {
                             p.y -= player.vy;
-                            // Платформа имеет монету, позиция монеты рассчитывается динамически в методе draw
+                            // Обновляем только y позицию платформы
+                            // Статические противники будут обновлять свои позиции с платформой
+                            // Движущиеся противники обновляют только x
                         }
 
                         if (p.y > height) {
@@ -568,7 +668,7 @@
                 var subs = platform_broken_substitute;
 
                 platforms.forEach(function(p, i) {
-                    p.update(); // Обновляем платформу и противника
+                    p.update(); // Обновляем платформу и противников
 
                     if (p.type == 2) {
                         // Уже обработано в методе update()
@@ -646,12 +746,28 @@
                     }
                 });
 
-                // Столкновения с противниками
+                // Столкновения с статическими противниками
                 platforms.forEach(function(p) {
-                    if (p.hasEnemy && p.enemy) {
-                        if (checkCollision(player, p.enemy)) {
+                    if (p.hasStaticEnemy && p.staticEnemy) {
+                        if (checkCollision(player, p.staticEnemy)) {
                             player.isDead = true;
                         }
+                    }
+                });
+
+                // Столкновения с движущимися противниками
+                platforms.forEach(function(p) {
+                    if (p.hasMovingEnemy && p.movingEnemy) {
+                        if (checkCollision(player, p.movingEnemy)) {
+                            player.isDead = true;
+                        }
+                    }
+                });
+
+                // Столкновения с ScreenEnemy
+                screenEnemies.forEach(function(se) {
+                    if (checkCollision(player, se)) {
+                        player.isDead = true;
                     }
                 });
             }
@@ -705,6 +821,27 @@
                 player.draw();
                 base.draw();
                 updateScore();
+
+                // Спавн нового ScreenEnemy с определенной вероятностью
+                if (Math.random() < 0.005) { // 0.5% вероятность
+                    screenEnemies.push(new ScreenEnemy());
+                }
+
+                // Обновление и отрисовка ScreenEnemy
+                for (var i = screenEnemies.length - 1; i >= 0; i--) {
+                    screenEnemies[i].update();
+                    screenEnemies[i].draw();
+
+                    // Проверка столкновения с игроком
+                    if (checkCollision(player, screenEnemies[i])) {
+                        player.isDead = true;
+                    }
+
+                    // Удаление противника, если он вышел за пределы экрана
+                    if (screenEnemies[i].toRemove) {
+                        screenEnemies.splice(i, 1);
+                    }
+                }
             }
 
             animloop = function() {
@@ -734,6 +871,7 @@
             platform_broken_substitute = new Platform_broken_substitute();
 
             platforms = [];
+            screenEnemies = []; // Сброс списка ScreenEnemy
             for (var i = 0; i < platformCount; i++) {
                 platforms.push(new Platform());
             }
@@ -774,15 +912,9 @@
         }
 
         // Запуск меню
-        menuLoop = function() { // Переименовано на menuLoop
-            update();
-            requestAnimFrame(menuLoop);
-        };
-
-        // Вызов функции menuLoop вместо undefined menuLoop()
-        // Если хотите запустить меню, например, анимацию до начала игры
-        // В противном случае, эта часть может быть лишней, если игра уже запускается через init()
-        // menuLoop();
+        // Если хотите запустить отдельный цикл для меню перед началом игры, можно раскомментировать следующую строку
+        // Но в данном случае, цикл игры запускается через init(), поэтому дополнительный цикл не нужен
+        // menuLoop = function() { ... };
     </script>
 </body>
 </html>
