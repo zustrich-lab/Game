@@ -35,6 +35,18 @@ html, body {
  z-index: -1;	
  border-image: url(https://i.imgur.com/5BBsR.png) 100 5 round;
 }
+#scoreBoard {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  color: #fff;
+  font-size: 24px;
+}
+
+#score, #coins {
+  margin: 0;
+  padding: 5px;
+}
 
 #scoreBoard p {
  font-size: 20px;

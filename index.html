@@ -29,6 +29,7 @@
         <div id="gameOverMenu">
             <h1>Игра окончена!</h1>
             <h3 id="go_score">Вы набрали 0 очков</h3>
+            <h3 id="go_coins">Вы собрали 0 монет</h3> <!-- Изменено: добавлено отображение монет -->
 
             <a class="button" href="javascript:reset()">Перезапустить</a>
             <a id="tweetBtn" target="_blank" class="button tweet" href="#">Твитнуть результат</a>
@@ -42,7 +43,8 @@
         <!-- Удалено: <img id="enemyScreen" src="./Img/enemy_screen.png" style="display: none;"/> -->
 
         <div id="scoreBoard">
-            <p id="score">0</p>
+            <p id="score">Очки: 0</p> <!-- Изменено: добавлено текстовое описание -->
+            <p id="coins">Монеты: 0</p> <!-- Изменено: добавлено отображение монет -->
         </div>
     </div>
 
@@ -90,9 +92,8 @@
             broken = 0,
             dir,
             score = 0,
+            coinsCollected = 0, // Изменено: добавлена переменная для монет
             firstRun = true;
-
-        // Удалено: var screenEnemies = []; // Список ScreenEnemy
 
         // Объект базы
         var Base = function() {
@@ -143,9 +144,9 @@
 
             this.collect = function() {
                 this.collected = true;
-                score += 100; // добавляем 100 очков за сбор монеты
+                coinsCollected += 1; // Изменено: увеличиваем количество монет
                 // Опционально: добавить звук или анимацию сбора монеты
-                console.log('Монета собрана! Очки:', score);
+                console.log('Монета собрана! Всего монет:', coinsCollected);
             };
         }
 
@@ -345,6 +346,8 @@
                 }
             };
 
+            
+
             this.update = function() {
                 // Обновляем платформу
                 if (this.type == 2) {
@@ -403,9 +406,6 @@
                 jumpCount = 0;
             
             firstRun = false;
-            // Удалено: coins = [];
-
-            // Удалено: screenEnemies = []; // Сброс списка ScreenEnemy
 
             // Функция очистки холста
             function paintCanvas() {
@@ -683,11 +683,40 @@
                 );
             }
 
-            // Функция обновления счета
+            // Функция обновления счета и монет
             function updateScore() {
                 var scoreText = document.getElementById("score");
-                scoreText.innerHTML = score;
+                scoreText.innerHTML = "Очки: " + score; // Изменено: добавлено текстовое описание
+
+                var coinsText = document.getElementById("coins");
+                coinsText.innerHTML = "Монеты: " + coinsCollected; // Изменено: отображение монет
             }
+
+            const [userId, setUserId] = useState(null); 
+
+useEffect(() => {
+  if (window.Telegram.WebApp) {
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+
+    const userIdFromTG = tg.initDataUnsafe?.user?.id;
+
+    if (userIdFromTG) {
+      setUserId(userIdFromTG);  
+      localStorage.setItem('userId', userIdFromTG);
+      console.log("User ID from Telegram WebApp: ", userIdFromTG);
+    } else {
+      console.error('userId не найден в initDataUnsafe');
+    }
+  } else {
+    console.error('Telegram Web App недоступен');
+  }
+
+  const savedUserId = localStorage.getItem('userId');
+  if (savedUserId && !userId) {
+    setUserId(savedUserId); 
+  }
+}, [userId]);
 
             // Функция окончания игры
             function gameOver() {
@@ -705,12 +734,46 @@
                     hideScore();
                     player.isDead = "lol";
 
+                    var goScoreText = document.getElementById("go_score");
+                    goScoreText.innerHTML = "Вы набрали " + score + " очков!";
+
+                    var goCoinsText = document.getElementById("go_coins");
+                    goCoinsText.innerHTML = "Вы собрали " + coinsCollected + " монет!"; // Изменено: обновление монет
+
                     var tweet = document.getElementById("tweetBtn");
-                    tweet.href='https://twitter.com/share?url=http://is.gd/PnFFzu&text=I just scored ' +score+ ' points in the HTML5 Doodle Jump game!&count=horiztonal&via=cssdeck&related=solitarydesigns';
+                    tweet.href='https://twitter.com/share?url=http://is.gd/PnFFzu&text=I just scored ' +score+ ' points and collected ' + coinsCollected + ' coins in the HTML5 Doodle Jump game!&count=horiztonal&via=cssdeck&related=solitarydesigns';
                 
                     var facebook = document.getElementById("fbBtn");
-                    facebook.href='https://facebook.com/sharer.php?s=100&p[url]=http://cssdeck.com/labs/html5-doodle-jump/8&p[title]=I just scored ' +score+ ' points in the HTML5 Doodle Jump game!&p[summary]=Can you beat me in this awesome recreation of Doodle Jump created in HTML5?';
+                    facebook.href='https://facebook.com/sharer.php?s=100&p[url]=http://cssdeck.com/labs/html5-doodle-jump/8&p[title]=I just scored ' +score+ ' points and collected ' + coinsCollected + ' coins in the HTML5 Doodle Jump game!&p[summary]=Can you beat me in this awesome recreation of Doodle Jump created in HTML5?';
                 }
+                const telegramId = localStorage.getItem('userId');// Реализуйте эту функцию в зависимости от вашей логики
+
+    const gameData = {
+        telegramId: telegramId,
+        score: score,
+        coins: coinsCollected,
+        timestamp: new Date().toISOString()
+    };
+
+    fetch('https://testforeveryoneback-production.up.railway.app/api/save-game-result', { // Замените на ваш реальный URL
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(gameData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Результаты игры успешно сохранены.');
+        } else {
+            console.error('Не удалось сохранить результаты игры:', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка при отправке результатов игры:', error);
+    });
+
             }
 
             // Функция обновления всех элементов
@@ -722,33 +785,6 @@
                 player.draw();
                 base.draw();
                 updateScore();
-
-                // Удалено: Спавн нового ScreenEnemy
-                /*
-                // Спавн нового ScreenEnemy с вероятностью 10%
-                if (Math.random() < 0.1) { // 10% вероятность
-                    screenEnemies.push(new ScreenEnemy());
-                }
-                */
-
-                // Удалено: Обновление и отрисовка ScreenEnemy
-                /*
-                // Обновление и отрисовка ScreenEnemy
-                for (var i = screenEnemies.length - 1; i >= 0; i--) {
-                    screenEnemies[i].update();
-                    screenEnemies[i].draw();
-
-                    // Проверка столкновения с игроком
-                    if (checkCollision(player, screenEnemies[i])) {
-                        player.isDead = true;
-                    }
-
-                    // Удаление противника, если он вышел за пределы экрана
-                    if (screenEnemies[i].toRemove) {
-                        screenEnemies.splice(i, 1);
-                    }
-                }
-                */
             }
 
             animloop = function() {
@@ -771,17 +807,16 @@
             flag = 0;
             position = 0;
             score = 0;
+            coinsCollected = 0; // Изменено: сброс монет
 
             base = new Base();
             player = new Player();
             platform_broken_substitute = new Platform_broken_substitute();
 
             platforms = [];
-            // Удалено: screenEnemies = []; // Сброс списка ScreenEnemy
             for (var i = 0; i < platformCount; i++) {
                 platforms.push(new Platform());
             }
-            // Удалено: coins = [];
         }
 
         // Функции управления меню
@@ -798,6 +833,9 @@
 
             var scoreText = document.getElementById("go_score");
             scoreText.innerHTML = "Вы набрали " + score + " очков!";
+
+            var coinsText = document.getElementById("go_coins");
+            coinsText.innerHTML = "Вы собрали " + coinsCollected + " монет!"; // Изменено: обновление монет
         }
 
         function hideGoMenu() {
