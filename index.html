@@ -739,36 +739,36 @@
         facebook.href='https://facebook.com/sharer.php?s=100&p[url]=http://cssdeck.com/labs/html5-doodle-jump/8&p[title]=I just scored ' + score + ' points and collected ' + coinsCollected + ' coins in the HTML5 Doodle Jump game!&p[summary]=Can you beat me in this awesome recreation of Doodle Jump created in HTML5?';
 
         // Fetch the telegram ID from localStorage (or wherever you store it)
-        const telegramId = userIdFromTelegram  // Replace with your logic
+        const telegramId = userIdFromTelegram; // Получение userId из URL
 
-        // Send the score and coins to the backend
-        if (telegramId) {
-            fetch('https://testforeveryoneback-production.up.railway.app/api/save-game-result', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    telegramId: telegramId,
-                    score: score,
-                    coins: coinsCollected,
-                    timestamp: new Date().toISOString()
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    console.log('Game result saved successfully.');
-                } else {
-                    console.error('Failed to save game result:', data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error saving game result:', error);
-            });
+// Отправка данных на сервер
+if (telegramId) {
+    fetch('https://testforeveryoneback-production.up.railway.app/api/save-game-result', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            telegramId: telegramId,
+            score: score,
+            coins: coinsCollected,
+            timestamp: new Date().toISOString()
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Game result saved successfully.');
         } else {
-            console.error('Telegram ID not found!');
+            console.error('Failed to save game result:', data.message);
         }
+    })
+    .catch(error => {
+        console.error('Error saving game result:', error);
+    });
+} else {
+    console.error('Telegram ID not found!');
+}
     }
 }
 
