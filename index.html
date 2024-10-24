@@ -692,11 +692,27 @@
                 coinsText.innerHTML = "Монеты: " + coinsCollected; // Изменено: отображение монет
             }
 
+            function getQueryParams() {
+    const params = {};
+    window.location.search.substring(1).split("&").forEach(function(part) {
+      const [key, value] = part.split("=");
+      if (key) params[decodeURIComponent(key)] = decodeURIComponent(value);
+    });
+    return params;
+  }
+
+  const queryParams = getQueryParams();
+  const userIdFromTelegram = queryParams.userId || null;
+
+  // Проверка наличия userId
+  if (!userIdFromTelegram) {
+    console.error('userId не передан в URL');
+  }
+
 
             // Функция окончания игры
-            function gameOver(score, coinsCollected) {
-                const urlParams = new URLSearchParams(window.location.search);
-    const userId = urlParams.get('userId');
+            function gameOver() {
+                
     platforms.forEach(function(p, i) {
         p.y -= 12;
     });
@@ -723,7 +739,7 @@
         facebook.href='https://facebook.com/sharer.php?s=100&p[url]=http://cssdeck.com/labs/html5-doodle-jump/8&p[title]=I just scored ' + score + ' points and collected ' + coinsCollected + ' coins in the HTML5 Doodle Jump game!&p[summary]=Can you beat me in this awesome recreation of Doodle Jump created in HTML5?';
 
         // Fetch the telegram ID from localStorage (or wherever you store it)
-        const telegramId = localStorage.getItem('userId');  // Replace with your logic
+        const telegramId = userIdFromTelegram  // Replace with your logic
 
         // Send the score and coins to the backend
         if (telegramId) {
