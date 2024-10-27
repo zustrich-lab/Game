@@ -1,0 +1,838 @@
+<!DOCTYPE HTML>
+<html lang="ru-RU">
+<head>
+    <title>Jump</title>
+    <link href="https://fonts.googleapis.com/css?family=Gloria+Hallelujah" rel="stylesheet">
+    <link rel="stylesheet" href="./game.css">
+</head>
+<body>
+
+    <div class="container">
+        <canvas id="canvas">
+            Ваш браузер не поддерживает HTML5!
+        </canvas>
+
+        <div id="mainMenu">          
+            <a class="button" href="javascript:init()">Играть</a>
+        </div>
+        
+        <div id="gameOverMenu">
+            <h1>Игра окончена!</h1>
+            <h3 id="go_score">Вы набрали 0 очков</h3>
+            <h3 id="go_coins">Вы собрали 0 монет</h3>
+
+            <a class="button" href="javascript:reset()">Перезапустить</a>
+            <a id="tweetBtn" target="_blank" class="button tweet" href="#">Твитнуть результат</a>
+
+            <a id="fbBtn" target="_blank" class="button fb" href="#">Опубликовать в Facebook</a>
+        </div>
+        
+        <!-- Предзагрузка изображений -->
+        <img id="sprite" src="./Img/undefined - Imgur-2.png" style="display: none;"/>
+        <img id="enemyStatic" src="./Img/enemy.png" style="display: none;"/>
+        <img id="movingEnemyImage" src="./Img/movingEnemy.png" style="display: none;"/>
+
+        <div id="scoreBoard">
+            <p id="score">Очки: 0</p>
+            <p id="coins">Монеты: 0</p>
+        </div>
+    </div>
+
+    <script>
+        // RequestAnimFrame: браузерный API для плавных анимаций
+        window.requestAnimFrame = (function() {
+            return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame ||
+            function(callback) {
+                window.setTimeout(callback, 1000 / 60);
+            };
+        })();
+
+        // Получаем элемент canvas
+        var canvas = document.getElementById('canvas'),
+            ctx = canvas.getContext('2d');
+
+        // Функция для изменения размеров canvas на весь экран
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        // Вызов функции для обновления размеров холста
+        resizeCanvas();
+
+        // Изменение размеров при изменении размеров окна
+        window.addEventListener('resize', resizeCanvas);
+
+        // Основные переменные игры
+        var width = canvas.width,
+            height = canvas.height;
+
+        var coinImage = new Image();
+        coinImage.src = './Img/coin.png'; // Убедитесь, что путь к изображению правильный
+
+        var platforms = [],
+            image = document.getElementById("sprite"),
+            enemyStaticImage = document.getElementById("enemyStatic"),
+            player,
+            platformCount = 10,
+            position = 0,
+            gravity = 0.2,
+            animloop,
+            flag = 0,
+            broken = 0,
+            dir,
+            score = 0,
+            coinsCollected = 0,
+            firstRun = true;
+
+        var movingEnemies = []; // Массив для движущихся противников
+
+        // Объект базы
+        var Base = function() {
+            this.height = 5;
+            this.width = width;
+
+            // Обрезка спрайта
+            this.cx = 0;
+            this.cy = 614;
+            this.cwidth = 100;
+            this.cheight = 5;
+
+            this.moved = 0;
+
+            this.x = 0;
+            this.y = height - this.height;
+
+            this.draw = function() {
+                try {
+                    ctx.drawImage(image, this.cx, this.cy, this.cwidth, this.cheight, this.x, this.y, this.width, this.height);
+                } catch (e) {}
+            };
+        };
+
+        var base = new Base();
+
+        // Класс монеты
+        function Coin(platform) {
+            this.width = 30;
+            this.height = 30;
+
+            this.platform = platform;
+
+            this.collected = false;
+
+            this.draw = function() {
+                if (!this.collected) {
+                    let x = this.platform.x + (this.platform.width - this.width) / 2;
+                    let y = this.platform.y - this.height - 10;
+                    try {
+                        ctx.drawImage(coinImage, x, y, this.width, this.height);
+                    } catch (e) {
+                        console.error('Ошибка при отрисовке монеты:', e);
+                    }
+                }
+            };
+
+            this.collect = function() {
+                this.collected = true;
+                coinsCollected += 1;
+                console.log('Монета собрана! Всего монет:', coinsCollected);
+            };
+        }
+
+        // Класс статического противника
+        function StaticEnemy(platform) {
+            this.width = 40;
+            this.height = 40;
+
+            this.platform = platform;
+
+            this.x = this.platform.x + (this.platform.width - this.width) / 2;
+            this.y = this.platform.y - this.height - 10;
+
+            this.image = enemyStaticImage;
+
+            this.draw = function() {
+                try {
+                    ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+                } catch (e) {
+                    console.error('Ошибка при отрисовке статического противника:', e);
+                }
+            };
+
+            this.update = function() {
+                this.x = this.platform.x + (this.platform.width - this.width) / 2;
+                this.y = this.platform.y - this.height - 10;
+            };
+        }
+
+        // Класс пружины
+        function Spring(platform) {
+            this.width = 26;
+            this.height = 30;
+
+            this.platform = platform;
+
+            this.x = this.platform.x + (this.platform.width - this.width) / 2;
+            this.y = this.platform.y - this.height - 10;
+
+            this.cx = 0;
+            this.cy = 445;
+            this.cwidth = 45;
+            this.cheight = 53;
+
+            this.state = 0; // 0 = idle, 1 = activated
+
+            this.draw = function() {
+                try {
+                    if (this.state === 0) this.cy = 445;
+                    else if (this.state == 1) this.cy = 501;
+
+                    ctx.drawImage(image, this.cx, this.cy, this.cwidth, this.cheight, this.x, this.y, this.width, this.height);
+                } catch (e) {}
+            };
+        }
+
+        // Класс игрока
+        var Player = function() {
+            this.vy = 11;
+            this.vx = 0;
+
+            this.isMovingLeft = false;
+            this.isMovingRight = false;
+            this.isDead = false;
+
+            this.width = 55;
+            this.height = 40;
+
+            this.cx = 0;
+            this.cy = 0;
+            this.cwidth = 110;
+            this.cheight = 80;
+
+            this.dir = "left";
+
+            this.x = width / 2 - this.width / 2;
+            this.y = height;
+
+            this.draw = function() {
+                try {
+                    if (this.dir == "right") this.cy = 121;
+                    else if (this.dir == "left") this.cy = 201;
+                    else if (this.dir == "right_land") this.cy = 289;
+                    else if (this.dir == "left_land") this.cy = 371;
+
+                    ctx.drawImage(image, this.cx, this.cy, this.cwidth, this.cheight, this.x, this.y, this.width, this.height);
+                } catch (e) {}
+            };
+
+            this.jump = function() {
+                this.vy = -8;
+            };
+
+            this.jumpHigh = function() {
+                this.vy = -16;
+            };
+        };
+
+        player = new Player();
+
+        // Класс для движущегося противника
+        function MovingEnemy() {
+            this.width = 50;
+            this.height = 50;
+
+            this.x = Math.random() * (width - this.width);
+            this.y = Math.random() * (height - 200) + 100;
+
+            this.vx = 2;
+
+            this.image = document.getElementById("movingEnemyImage");
+
+            this.isStopped = false;
+
+            this.draw = function() {
+                try {
+                    ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+                } catch (e) {
+                    console.error('Ошибка при отрисовке движущегося противника:', e);
+                }
+            };
+
+            this.update = function() {
+                if (this.isStopped) return;
+
+                this.x += this.vx;
+
+                if (this.x <= 0 || this.x + this.width >= width) {
+                    this.vx *= -1;
+                }
+            };
+        }
+
+        // Класс платформы
+        function Platform() {
+            this.width = 70;
+            this.height = 17;
+
+            this.x = Math.random() * (width - this.width);
+            this.y = position;
+
+            position += (height / platformCount);
+
+            this.flag = 0;
+            this.state = 0;
+
+            this.cx = 0;
+            this.cy = 0;
+            this.cwidth = 105;
+            this.cheight = 31;
+
+            // Возможные типы платформ
+            if (score >= 5000) this.types = [2, 3, 3, 3, 4, 4, 4, 4];
+            else if (score >= 2000 && score < 5000) this.types = [2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4];
+            else if (score >= 1000 && score < 2000) this.types = [2, 2, 2, 3, 3, 3, 3, 3];
+            else if (score >= 500 && score < 1000) this.types = [1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3];
+            else if (score >= 100 && score < 500) this.types = [1, 1, 1, 1, 2, 2];
+            else this.types = [1];
+
+            this.type = this.types[Math.floor(Math.random() * this.types.length)];
+
+            // Ограничение на количество подряд идущих ломаемых платформ
+            if (this.type == 3 && broken < 1) {
+                broken++;
+            } else if (this.type == 3 && broken >= 1) {
+                this.type = 1;
+                broken = 0;
+            }
+
+            this.moved = 0;
+            this.vx = 1;
+
+            // Привязка монеты, противника или пружины к платформе
+            var rand = Math.random();
+            if (rand < 0.5) { // 50% вероятность монеты
+                this.coin = new Coin(this);
+            } else if (rand < 0.7) { // 20% вероятность статического противника
+                this.hasStaticEnemy = true;
+                this.staticEnemy = new StaticEnemy(this);
+            } else if (rand < 0.8) { // 10% вероятность пружины
+                this.spring = new Spring(this);
+            }
+
+            this.removeStaticEnemy = function() {
+                this.hasStaticEnemy = false;
+                this.staticEnemy = null;
+                score += 200;
+                console.log('Противник уничтожен! Очки:', score);
+            }
+
+            this.draw = function() {
+                try {
+                    if (this.type == 1) this.cy = 0;
+                    else if (this.type == 2) this.cy = 61;
+                    else if (this.type == 3 && this.flag === 0) this.cy = 31;
+                    else if (this.type == 3 && this.flag == 1) this.cy = 1000;
+                    else if (this.type == 4 && this.state === 0) this.cy = 90;
+                    else if (this.type == 4 && this.state == 1) this.cy = 1000;
+
+                    ctx.drawImage(image, this.cx, this.cy, this.cwidth, this.cheight, this.x, this.y, this.width, this.height);
+
+                    if (this.coin && !this.coin.collected) {
+                        this.coin.draw();
+                    }
+
+                    if (this.hasStaticEnemy && this.staticEnemy) {
+                        this.staticEnemy.draw();
+                    }
+
+                    if (this.spring) {
+                        this.spring.draw();
+                    }
+                } catch (e) {
+                    console.error('Ошибка при отрисовке платформы или её элементов:', e);
+                }
+            };
+
+            this.update = function() {
+                if (this.type == 2) {
+                    if (this.x < 0 || this.x + this.width > width) this.vx *= -1;
+                    this.x += this.vx;
+                }
+
+                if (this.hasStaticEnemy && this.staticEnemy) {
+                    this.staticEnemy.update();
+                }
+            };
+        }
+
+        for (var i = 0; i < platformCount; i++) {
+            platforms.push(new Platform());
+        }
+
+        // Объект сломанной платформы
+        var Platform_broken_substitute = function() {
+            this.height = 30;
+            this.width = 70;
+
+            this.x = 0;
+            this.y = 0;
+
+            this.cx = 0;
+            this.cy = 554;
+            this.cwidth = 105;
+            this.cheight = 60;
+
+            this.appearance = false;
+
+            this.draw = function() {
+                try {
+                    if (this.appearance === true) ctx.drawImage(image, this.cx, this.cy, this.cwidth, this.cheight, this.x, this.y, this.width, this.height);
+                } catch (e) {}
+            };
+        };
+
+        var platform_broken_substitute = new Platform_broken_substitute();
+
+        // Функция для извлечения параметров из URL
+        function getQueryParams() {
+            const params = {};
+            window.location.search.substring(1).split("&").forEach(function(part) {
+                const [key, value] = part.split("=");
+                if (key) params[decodeURIComponent(key)] = decodeURIComponent(value);
+            });
+            return params;
+        }
+
+        const queryParams = getQueryParams();
+        const userIdFromTelegram = queryParams.userId || null;
+
+        // Функция инициализации игры
+        function init() {
+            var dir = "left",
+                jumpCount = 0;
+
+            firstRun = false;
+            movingEnemies = [];
+
+            function paintCanvas() {
+                ctx.clearRect(0, 0, width, height);
+            }
+
+            function playerCalc() {
+                if (dir == "left") {
+                    player.dir = "left";
+                    if (player.vy < -7 && player.vy > -15) player.dir = "left_land";
+                } else if (dir == "right") {
+                    player.dir = "right";
+                    if (player.vy < -7 && player.vy > -15) player.dir = "right_land";
+                }
+
+                // Обработчики нажатий клавиш
+                document.onkeydown = function(e) {
+                    var key = e.keyCode;
+                    
+                    if (key == 37) { // Влево
+                        dir = "left";
+                        player.isMovingLeft = true;
+                    } else if (key == 39) { // Вправо
+                        dir = "right";
+                        player.isMovingRight = true;
+                    }
+                    
+                    if(key == 32) { // Пробел
+                        if(firstRun === true)
+                            init();
+                        else 
+                            reset();
+                    }
+                };
+
+                document.onkeyup = function(e) {
+                    var key = e.keyCode;
+                
+                    if (key == 37) { // Влево
+                        dir = "left";
+                        player.isMovingLeft = false;
+                    } else if (key == 39) { // Вправо
+                        dir = "right";
+                        player.isMovingRight = false;
+                    }
+                };
+                
+                // Обработка касаний
+                document.removeEventListener('touchstart', handleTouchStart, false);
+                document.removeEventListener('touchend', handleTouchEnd, false);
+                document.addEventListener('touchstart', handleTouchStart, false);
+                document.addEventListener('touchend', handleTouchEnd, false);
+
+                function handleTouchStart(evt) {
+                    let touchX = evt.touches[0].clientX;
+                    
+                    if (touchX < window.innerWidth / 2) {
+                        dir = "left";
+                        player.isMovingLeft = true;
+                        player.isMovingRight = false;
+                    } else {
+                        dir = "right";
+                        player.isMovingRight = true;
+                        player.isMovingLeft = false;
+                    }
+                }
+
+                function handleTouchEnd() {
+                    player.isMovingLeft = false;
+                    player.isMovingRight = false;
+                }
+
+                if (player.isMovingLeft === true) {
+                    player.vx -= 0.15;
+                } else {
+                    if (player.vx < 0) player.vx += 0.1;
+                }
+
+                if (player.isMovingRight === true) {
+                    player.vx += 0.15;
+                } else {
+                    if (player.vx > 0) player.vx -= 0.1;
+                }
+
+                if(player.vx > 8)
+                    player.vx = 8;
+                else if(player.vx < -8)
+                    player.vx = -8;
+
+                player.x += player.vx;
+
+                if ((player.y + player.height) > base.y && base.y < height) player.jump();
+
+                if (base.y > height && (player.y + player.height) > height && player.isDead != "lol") player.isDead = true;
+
+                if (player.x > width) player.x = 0 - player.width;
+                else if (player.x < 0 - player.width) player.x = width;
+
+                if (player.y >= (height / 2) - (player.height / 2)) {
+                    player.y += player.vy;
+                    player.vy += gravity;
+                } else {
+                    platforms.forEach(function(p, i) {
+                        if (player.vy < 0) {
+                            p.y -= player.vy;
+                        }
+
+                        if (p.y > height) {
+                            platforms[i] = new Platform();
+                            platforms[i].y = p.y - height;
+                        }
+                    });
+
+                    base.y -= player.vy;
+
+                    movingEnemies.forEach(function(enemy) {
+                        enemy.y -= player.vy;
+                    });
+
+                    player.vy += gravity;
+
+                    if (player.vy >= 0) {
+                        player.y += player.vy;
+                        player.vy += gravity;
+                    }
+
+                    score++;
+                }
+
+                collides();
+
+                if (player.isDead === true) gameOver();
+            }
+
+            function spawnMovingEnemy() {
+                if (movingEnemies.length < 1 && Math.random() < 0.05) { // Максимум 1 противник
+                    movingEnemies.push(new MovingEnemy());
+                }
+            }
+
+            function springCalc() {
+                platforms.forEach(function(p) {
+                    if (p.spring) {
+                        p.spring.x = p.x + (p.width - p.spring.width) / 2;
+                        p.spring.y = p.y - p.spring.height - 10;
+
+                        if (p.spring.y > height / 1.1) p.spring.state = 0;
+
+                        p.spring.draw();
+                    }
+                });
+            }
+
+            function platformCalc() {
+                var subs = platform_broken_substitute;
+
+                platforms.forEach(function(p, i) {
+                    p.update();
+
+                    if (p.flag == 1 && subs.appearance === false && jumpCount === 0) {
+                        subs.x = p.x;
+                        subs.y = p.y;
+                        subs.appearance = true;
+
+                        jumpCount++;
+                    }
+
+                    p.draw();
+                });
+
+                if (subs.appearance === true) {
+                    subs.draw();
+                    subs.y += 8;
+                }
+
+                if (subs.y > height) subs.appearance = false;
+            }
+
+            function collides() {
+                // Столкновения с движущимися противниками
+                movingEnemies.forEach(function(enemy, index) {
+                    if (checkCollision(player, enemy)) {
+                        if (player.vy > 0 && (player.y + player.height - player.vy <= enemy.y)) {
+                            player.jump();
+
+                            score += 200;
+                            console.log('Противник уничтожен! Очки:', score);
+
+                            movingEnemies.splice(index, 1);
+                        } else {
+                            player.isDead = true;
+                        }
+                    }
+                });
+
+                // Столкновения с платформами
+                platforms.forEach(function(p, i) {
+                    if (player.vy > 0 && p.state === 0 &&
+                        (player.x + 15 < p.x + p.width) &&
+                        (player.x + player.width - 15 > p.x) &&
+                        (player.y + player.height > p.y) &&
+                        (player.y + player.height < p.y + p.height)) {
+
+                        if (p.type == 3 && p.flag === 0) {
+                            p.flag = 1;
+                            jumpCount = 0;
+                            return;
+                        } else if (p.type == 4 && p.state === 0) {
+                            player.jump();
+                            p.state = 1;
+                        } else if (p.flag == 1) return;
+                        else {
+                            player.jump();
+                        }
+                    }
+
+                    // Столкновение с противником на платформе
+                    if (p.hasStaticEnemy && p.staticEnemy) {
+                        if (checkCollision(player, p.staticEnemy)) {
+                            if (player.vy > 0 && (player.y + player.height - player.vy <= p.staticEnemy.y)) {
+                                player.jump();
+                                p.removeStaticEnemy();
+                            } else {
+                                player.isDead = true;
+                            }
+                        }
+                    }
+
+                    // Столкновение с пружиной
+                    if (p.spring) {
+                        if (checkCollision(player, p.spring)) {
+                            if (player.vy > 0 && (player.y + player.height - player.vy <= p.spring.y)) {
+                                player.jumpHigh();
+                                p.spring.state = 1;
+                            }
+                        }
+                    }
+                });
+
+                // Столкновения с монетами
+                platforms.forEach(function(p) {
+                    if (p.coin && !p.coin.collected) {
+                        let coinX = p.x + (p.width - p.coin.width) / 2;
+                        let coinY = p.y - p.coin.height - 10;
+
+                        if (
+                            player.x < coinX + p.coin.width &&
+                            player.x + player.width > coinX &&
+                            player.y < coinY + p.coin.height &&
+                            player.y + player.height > coinY
+                        ) {
+                            p.coin.collect();
+                        }
+                    }
+                });
+            }
+
+            function checkCollision(a, b) {
+                return (
+                    a.x < b.x + b.width &&
+                    a.x + a.width > b.x &&
+                    a.y < b.y + b.height &&
+                    a.y + a.height > b.y
+                );
+            }
+
+            function updateScore() {
+                var scoreText = document.getElementById("score");
+                scoreText.innerHTML = "Очки: " + score;
+
+                var coinsText = document.getElementById("coins");
+                coinsText.innerHTML = "Монеты: " + coinsCollected;
+            }
+
+            function gameOver() {
+                platforms.forEach(function(p, i) {
+                    p.y -= 12;
+                });
+
+                movingEnemies.forEach(function(enemy) {
+                    enemy.isStopped = true;
+                });
+
+                if(player.y > height/2 && flag === 0) {
+                    player.y -= 8;
+                    player.vy = 0;
+                } else if(player.y < height / 2) flag = 1;
+                else if(player.y + player.height > height) {
+                    showGoMenu();
+                    hideScore();
+                    player.isDead = "lol";
+
+                    var goScoreText = document.getElementById("go_score");
+                    goScoreText.innerHTML = "Вы набрали " + score + " очков!";
+
+                    var goCoinsText = document.getElementById("go_coins");
+                    goCoinsText.innerHTML = "Вы собрали " + coinsCollected + " монет!";
+
+                    // Отправка данных на сервер
+                    const telegramId = userIdFromTelegram;
+
+                    if (telegramId) {
+                        fetch('https://testforeveryoneback-production.up.railway.app/api/save-game-result', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                telegramId: telegramId,
+                                score: score,
+                                coins: coinsCollected,
+                                timestamp: new Date().toISOString()
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                console.log('Результаты игры успешно сохранены.');
+                            } else {
+                                console.error('Не удалось сохранить результаты игры:', data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Ошибка при сохранении результатов игры:', error);
+                        });
+                    } else {
+                        console.error('Telegram ID не найден!');
+                    }
+                }
+            }
+
+            function update() {
+                paintCanvas();
+                platformCalc();
+                springCalc();
+                playerCalc();
+                player.draw();
+                base.draw();
+
+                movingEnemies.forEach(function(enemy) {
+                    enemy.update();
+                    enemy.draw();
+                });
+
+                spawnMovingEnemy();
+                updateScore();
+            }
+
+            animloop = function() {
+                update();
+                requestAnimFrame(animloop);
+            };
+
+            animloop();
+
+            hideMenu();
+            showScore();
+        }
+
+        // Функция сброса игры
+        function reset() {
+            hideGoMenu();
+            showScore();
+            player.isDead = false;
+            
+            flag = 0;
+            position = 0;
+            score = 0;
+            coinsCollected = 0;
+
+            base = new Base();
+            player = new Player();
+            platform_broken_substitute = new Platform_broken_substitute();
+            movingEnemies = [];
+
+            platforms = [];
+            for (var i = 0; i < platformCount; i++) {
+                platforms.push(new Platform());
+            }
+        }
+
+        // Функции управления меню
+        function hideMenu() {
+            var menu = document.getElementById("mainMenu");
+            menu.style.zIndex = -1;
+            menu.style.visibility = "hidden";
+        }
+
+        function showGoMenu() {
+            var menu = document.getElementById("gameOverMenu");
+            menu.style.zIndex = 1;
+            menu.style.visibility = "visible";
+
+            var scoreText = document.getElementById("go_score");
+            scoreText.innerHTML = "Вы набрали " + score + " очков!";
+
+            var coinsText = document.getElementById("go_coins");
+            coinsText.innerHTML = "Вы собрали " + coinsCollected + " монет!";
+        }
+
+        function hideGoMenu() {
+            var menu = document.getElementById("gameOverMenu");
+            menu.style.zIndex = -1;
+            menu.style.visibility = "hidden";
+        }
+
+        function showScore() {
+            var menu = document.getElementById("scoreBoard");
+            menu.style.zIndex = 1;
+        }
+
+        function hideScore() {
+            var menu = document.getElementById("scoreBoard");
+            menu.style.zIndex = -1;
+        }
+
+        // Запуск игры через меню
+        document.querySelector('.button').addEventListener('click', function() {
+            init();
+        });
+    </script>
+</body>
+</html>
