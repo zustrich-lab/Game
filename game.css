@@ -86,8 +86,8 @@ html, body {
 
 .buttonreset{
   background: url(./Img/Again.png);
-  height: 180px;
-  width: 495px;
+  height: 90px;
+  width: 247px;
   display: flex;
   align-items: center;
   justify-content: center;
