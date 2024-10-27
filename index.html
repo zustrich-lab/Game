@@ -555,7 +555,7 @@
 
             function spawnMovingEnemy() {
                 // Спавним движущегося противника с шансом 50%
-                if (movingEnemies.length < 1 && Math.random() < 0.5) {
+                if (movingEnemies.length < 1 && Math.random() < 0.1) {
                     let enemy = new MovingEnemy();
                     // Устанавливаем позицию противника выше текущей позиции игрока
                     enemy.y = player.y - (height / 2) - Math.random() * (height / 2);
