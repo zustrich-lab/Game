@@ -269,21 +269,21 @@
                 }
             };
 
-            this.update = function() {
-    if (this.isStopped) return;
+            this.update = function(index) {
+                if (this.isStopped) return;
 
-    // Движение противника по горизонтали
-    this.x += this.vx;
+                // Логика движения
+                this.x += this.vx;
 
-    if (this.x <= 0 || this.x + this.width >= width) {
-        this.vx *= -1;
-    }
+                if (this.x <= 0 || this.x + this.width >= width) {
+                    this.vx *= -1;
+                }
 
-    // Если противник ушёл за верхний или нижний край экрана, помечаем его для удаления
-    if (this.y > height || this.y + this.height < 0) {
-        this.isOffScreen = true;
-    }
-};
+                // Проверяем, вышел ли противник за пределы экрана по вертикали
+                if (this.y > height || this.y + this.height < 0) {
+                    movingEnemies.splice(index, 1);
+                }
+            };
         }
 
         // Класс платформы
@@ -329,7 +329,7 @@
             var rand = Math.random();
             if (rand < 0.5) { // 50% вероятность монеты
                 this.coin = new Coin(this);
-            } else if (rand < 0.1) { // 20% вероятность статического противника
+            } else if (rand < 0.1) { // 10% вероятность статического противника
                 this.hasStaticEnemy = true;
                 this.staticEnemy = new StaticEnemy(this);
             } else if (rand < 0.8) { // 10% вероятность пружины
@@ -409,19 +409,6 @@
         };
 
         var platform_broken_substitute = new Platform_broken_substitute();
-
-        // Функция для извлечения параметров из URL
-        function getQueryParams() {
-            const params = {};
-            window.location.search.substring(1).split("&").forEach(function(part) {
-                const [key, value] = part.split("=");
-                if (key) params[decodeURIComponent(key)] = decodeURIComponent(value);
-            });
-            return params;
-        }
-
-        const queryParams = getQueryParams();
-        const userIdFromTelegram = queryParams.userId || null;
 
         // Функция инициализации игры
         function init() {
@@ -564,10 +551,11 @@
             }
 
             function spawnMovingEnemy() {
-    if (movingEnemies.length < 1 && Math.random() < 0.1) { // 10% вероятность
-        movingEnemies.push(new MovingEnemy());
-    }
-}
+                // Спавним движущегося противника с шансом 10%
+                if (movingEnemies.length < 1 && Math.random() < 0.1) {
+                    movingEnemies.push(new MovingEnemy());
+                }
+            }
 
             function springCalc() {
                 platforms.forEach(function(p) {
@@ -726,37 +714,6 @@
 
                     var goCoinsText = document.getElementById("go_coins");
                     goCoinsText.innerHTML = "Вы собрали " + coinsCollected + " монет!";
-
-                    // Отправка данных на сервер
-                    const telegramId = userIdFromTelegram;
-
-                    if (telegramId) {
-                        fetch('https://testforeveryoneback-production.up.railway.app/api/save-game-result', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                telegramId: telegramId,
-                                score: score,
-                                coins: coinsCollected,
-                                timestamp: new Date().toISOString()
-                            })
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                console.log('Результаты игры успешно сохранены.');
-                            } else {
-                                console.error('Не удалось сохранить результаты игры:', data.message);
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Ошибка при сохранении результатов игры:', error);
-                        });
-                    } else {
-                        console.error('Telegram ID не найден!');
-                    }
                 }
             }
 
@@ -768,18 +725,8 @@
                 player.draw();
                 base.draw();
 
-                movingEnemies.forEach(function(enemy) {
-    enemy.update();
-    enemy.draw();
-});
-
-// Удаляем противников, которые вышли за пределы экрана
-movingEnemies = movingEnemies.filter(function(enemy) {
-    return !enemy.isOffScreen;
-});
-
-                movingEnemies.forEach(function(enemy) {
-                    enemy.update();
+                movingEnemies.forEach(function(enemy, index) {
+                    enemy.update(index);
                     enemy.draw();
                 });
 
