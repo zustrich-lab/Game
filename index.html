@@ -317,7 +317,7 @@
             var rand = Math.random();
             if (rand < 0.5) { // 50% вероятность монеты
                 this.coin = new Coin(this);
-            } else if (rand < 0.5) { // 10% вероятность статического противника
+            } else if (rand < 0.9) { // 10% вероятность статического противника
                 this.hasStaticEnemy = true;
                 this.staticEnemy = new StaticEnemy(this);
             } else if (rand < 0.8) { // 10% вероятность пружины
