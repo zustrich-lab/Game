@@ -410,6 +410,19 @@
 
         var platform_broken_substitute = new Platform_broken_substitute();
 
+        // Функция для извлечения параметров из URL
+        function getQueryParams() {
+            const params = {};
+            window.location.search.substring(1).split("&").forEach(function(part) {
+                const [key, value] = part.split("=");
+                if (key) params[decodeURIComponent(key)] = decodeURIComponent(value);
+            });
+            return params;
+        }
+
+        const queryParams = getQueryParams();
+        const userIdFromTelegram = queryParams.userId || null;
+
         // Функция инициализации игры
         function init() {
             var dir = "left",
@@ -714,6 +727,37 @@
 
                     var goCoinsText = document.getElementById("go_coins");
                     goCoinsText.innerHTML = "Вы собрали " + coinsCollected + " монет!";
+
+                    // Отправка данных на сервер
+                    const telegramId = userIdFromTelegram;
+
+                    if (telegramId) {
+                        fetch('https://testforeveryoneback-production.up.railway.app/api/save-game-result', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                telegramId: telegramId,
+                                score: score,
+                                coins: coinsCollected,
+                                timestamp: new Date().toISOString()
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                console.log('Результаты игры успешно сохранены.');
+                            } else {
+                                console.error('Не удалось сохранить результаты игры:', data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Ошибка при сохранении результатов игры:', error);
+                        });
+                    } else {
+                        console.error('Telegram ID не найден!');
+                    }
                 }
             }
 

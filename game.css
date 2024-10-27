@@ -12,7 +12,10 @@ html, body {
 
 .container {
     width: 100%; /* 100% от ширины экрана */
-    height: 100%; /* 100% от высоты экрана */
+
+    height: 90%; /* 100% от высоты экрана */
+
+
     position: relative;
     margin: 0;
     overflow: hidden;
