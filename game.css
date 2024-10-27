@@ -85,17 +85,18 @@ html, body {
 }
 
 .buttonreset{
-  background: url(./Img/Again.png);
+  background: url(./Img/Again.png) no-repeat;
   background-position-x: center;
   background-position-y: center;
-  background-size: 100%, auto;
-  height: 90px;
-  width: 247px;
+  background-size: auto, 100%;
+  height: 15%;
+  width: 100%;
+  line-height: 2.8vh;
   display: flex;
   align-items: center;
   justify-content: center;
   color:  white;
-  font-size: 2vh;
+  font-size: 2.5vh;
 }
 
 
