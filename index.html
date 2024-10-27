@@ -256,20 +256,20 @@
 
         player = new Player();
 
-        // Класс для движущегося противника
+        var movingEnemies = []; // Массив для движущихся противников // Класс для движущегося противника
+// Класс для движущегося противника
 function MovingEnemy() {
     this.width = 50; // ширина противника
     this.height = 50; // высота противника
 
     // Начальные координаты противника
-    this.x = 0;
-    this.y = height / 2; // Фиксированная вертикальная позиция (можете изменить по желанию)
+    this.x = Math.random() * (width - this.width);
+    this.y = Math.random() * (height - 200) + 100; // Случайная позиция по вертикали
 
     this.vx = 2; // Скорость по горизонтали
 
     // Загрузка изображения противника
-    this.image = new Image();
-    this.image = document.getElementById("movingEnemyImage"); // Укажите правильный путь к изображению
+    this.image = document.getElementById("movingEnemyImage");
 
     this.isStopped = false; // Флаг для остановки движения при окончании игры
 
@@ -445,7 +445,7 @@ var movingEnemy = new MovingEnemy();
                 jumpCount = 0;
             
             firstRun = false;
-
+            movingEnemies = []; 
             // Функция очистки холста
             function paintCanvas() {
                 ctx.clearRect(0, 0, width, height);
@@ -577,6 +577,9 @@ var movingEnemy = new MovingEnemy();
                     });
 
                     base.y -= player.vy;
+                    movingEnemies.forEach(function(enemy) {
+        enemy.y -= player.vy;
+    });
                     player.vy += gravity;
 
                     if (player.vy >= 0) {
@@ -592,7 +595,11 @@ var movingEnemy = new MovingEnemy();
 
                 if (player.isDead === true) gameOver();
             }
-
+            function spawnMovingEnemy() {
+    if (Math.random() < 0.05) { // 5% вероятность
+        movingEnemies.push(new MovingEnemy());
+    }
+}
             // Алгоритмы пружины
             function springCalc() {
                 platforms.forEach(function(p) {
@@ -640,6 +647,26 @@ var movingEnemy = new MovingEnemy();
 
             // Функция столкновений
             function collides() {
+
+                // Столкновения с движущимися противниками
+movingEnemies.forEach(function(enemy, index) {
+    if (checkCollision(player, enemy)) {
+        // Если игрок падает сверху на противника
+        if (player.vy > 0 && (player.y + player.height - player.vy <= enemy.y)) {
+            player.jump();
+
+            // Добавляем очки за уничтожение противника
+            score += 200;
+            console.log('Противник уничтожен! Очки:', score);
+
+            // Удаляем противника из массива
+            movingEnemies.splice(index, 1);
+        } else {
+            // Столкновение с любой другой стороны приводит к проигрышу
+            player.isDead = true;
+        }
+    }
+});
                 // Столкновения с платформами
                 platforms.forEach(function(p, i) {
                     // Столкновение с платформой
@@ -771,6 +798,9 @@ function gameOver() {
     platforms.forEach(function(p, i) {
         p.y -= 12;
     });
+    movingEnemies.forEach(function(enemy) {
+        enemy.isStopped = true;
+    });
 
     if(player.y > height/2 && flag === 0) {
         player.y -= 8;
@@ -828,6 +858,12 @@ if (telegramId) {
     }
 }
 
+function spawnMovingEnemy() {
+    if (movingEnemies.length < 1 && Math.random() < 0.05) { // Максимум 3 противника
+        movingEnemies.push(new MovingEnemy());
+    }
+}
+
             // Функция обновления всех элементов
             function update() {
                 paintCanvas();
@@ -836,8 +872,11 @@ if (telegramId) {
                 playerCalc();
                 player.draw();
                 base.draw();
-                movingEnemy.update(); // Обновляем позицию противника
-                movingEnemy.draw();  
+                movingEnemies.forEach(function(enemy) {
+        enemy.update();
+        enemy.draw();
+    });
+    spawnMovingEnemy();
                 updateScore();
             }
 
@@ -867,6 +906,8 @@ if (telegramId) {
             player = new Player();
             platform_broken_substitute = new Platform_broken_substitute();
             movingEnemy = new MovingEnemy();
+
+            movingEnemies = [];
 
             platforms = [];
             for (var i = 0; i < platformCount; i++) {
