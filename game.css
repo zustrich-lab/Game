@@ -72,6 +72,10 @@ img {display: none}
 
 #gameOverMenu {
  visibility: hidden;
+ background: url(./Img/Over.PNG) top left no-repeat;
+ background-size: cover;
+ height: 100%;
+ width: 100%;
 }
 
 h2, h3, h1 {font-weight: normal}
