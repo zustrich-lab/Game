@@ -270,14 +270,16 @@
             };
 
             this.update = function() {
-                if (this.isStopped) return;
+    if (this.isStopped) return;
 
-                this.x += this.vx;
+    // Увеличиваем скорость в зависимости от счёта
+    let speedMultiplier = 1 + score / 5000; // Скорость растёт до 2х при 5000 очков
+    this.x += this.vx * speedMultiplier;
 
-                if (this.x <= 0 || this.x + this.width >= width) {
-                    this.vx *= -1;
-                }
-            };
+    if (this.x <= 0 || this.x + this.width >= width) {
+        this.vx *= -1;
+    }
+};
         }
 
         // Класс платформы
@@ -558,10 +560,16 @@
             }
 
             function spawnMovingEnemy() {
-                if (movingEnemies.length < 1 && Math.random() < 0.05) { // Максимум 1 противник
-                    movingEnemies.push(new MovingEnemy());
-                }
-            }
+    // Начинаем спавнить противников после достижения 500 очков
+    if (score >= 500) {
+        // Увеличиваем вероятность появления противника по мере увеличения счёта
+        let spawnProbability = Math.min(0.05 + (score - 500) / 10000, 0.2); // Максимум 20% вероятность
+
+        if (movingEnemies.length < 3 && Math.random() < spawnProbability) {
+            movingEnemies.push(new MovingEnemy());
+        }
+    }
+}
 
             function springCalc() {
                 platforms.forEach(function(p) {
