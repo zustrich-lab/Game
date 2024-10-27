@@ -552,20 +552,18 @@
 
                 if (player.isDead === true) gameOver();
             }
-
             function spawnMovingEnemy() {
-                // Спавним движущегося противника с шансом 50%
-                if (movingEnemies.length < 1 && Math.random() < 0.1) {
-                    let enemy = new MovingEnemy();
-                    // Устанавливаем позицию противника выше текущей позиции игрока
-                    enemy.y = player.y - (height / 2) - Math.random() * (height / 2);
-                    // Убедимся, что противник не выходит за верхнюю границу экрана
-                    if (enemy.y < 0) {
-                        enemy.y = 0;
-                    }
-                    movingEnemies.push(enemy);
-                }
+    if (frameCount % 60 === 0) { // Каждые 60 кадров
+        if (Math.random() < 0.1 && movingEnemies.length < MAX_MOVING_ENEMIES) { // 10% вероятность
+            let enemy = new MovingEnemy();
+            enemy.y = player.y - (height / 2) - Math.random() * (height / 2);
+            if (enemy.y < 0) {
+                enemy.y = 0;
             }
+            movingEnemies.push(enemy);
+        }
+    }
+  }
 
             function springCalc() {
                 platforms.forEach(function(p) {
@@ -815,7 +813,12 @@
                 }
             }
 
+            var frameCount = 0;
+            var MAX_MOVING_ENEMIES = 1; // Установите нужное значение
+
+
             function update() {
+                frameCount++;
                 paintCanvas();
                 platformCalc();
                 springCalc();
