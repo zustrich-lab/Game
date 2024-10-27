@@ -88,7 +88,7 @@ html, body {
   background: url(./Img/Again.png) no-repeat;
   background-position-x: center;
   background-position-y: center;
-  background-size: auto, 100%;
+  background-size: 100%, auto;
   height: 15%;
   width: 100%;
   line-height: 2.8vh;
