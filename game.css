@@ -60,7 +60,7 @@ html, body {
  margin: 0px 0 0 5px;
 }
 
-img {display: none}
+
 
 #mainMenu, #gameOverMenu {
  height: 100%;
@@ -84,6 +84,18 @@ img {display: none}
  flex-direction: column;
 }
 
+.buttonreset{
+  background: url(./Img/Again.png);
+  height: 180px;
+  width: 495px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color:  white;
+  font-size: 3vh;
+}
+
+
 h2, h3, h1 {font-weight: normal}
 h1 {
  font-size: 60px; 
@@ -95,16 +107,6 @@ h1 {
 h3 {text-align: right; margin: -10px 20px 0 0; color: #5e96be}
 h3 a {color: #5a5816}
 
-.buttonreset{
-  height: 15%;
-  background: url(./Img/Again.png) 0 0 no-repeat;
-  display: block;
-  color:  #000;
-  font-size: 3vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 
 .button {
  width: 105px;
