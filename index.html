@@ -317,7 +317,7 @@
             var rand = Math.random();
             if (rand < 0.5) { // 50% вероятность монеты
                 this.coin = new Coin(this);
-            } else if (rand < 0.9) { // 10% вероятность статического противника
+            } else if (rand < 0.5) { // 10% вероятность статического противника
                 this.hasStaticEnemy = true;
                 this.staticEnemy = new StaticEnemy(this);
             } else if (rand < 0.8) { // 10% вероятность пружины
@@ -482,76 +482,87 @@
             document.addEventListener('touchend', handleTouchEnd, false);
 
             function playerCalc() {
-                
-                if (dir == "left") {
-                    player.dir = "left";
-                    if (player.vy < -7 && player.vy > -15) player.dir = "left_land";
-                } else if (dir == "right") {
-                    player.dir = "right";
-                    if (player.vy < -7 && player.vy > -15) player.dir = "right_land";
+    // Управление направлением
+    if (dir == "left") {
+        player.dir = "left";
+        if (player.vy < -7 && player.vy > -15) player.dir = "left_land";
+    } else if (dir == "right") {
+        player.dir = "right";
+        if (player.vy < -7 && player.vy > -15) player.dir = "right_land";
+    }
+
+    // Управление горизонтальной скоростью
+    if (player.isMovingLeft === true) {
+        player.vx -= 0.15;
+    } else {
+        if (player.vx < 0) player.vx += 0.1;
+    }
+
+    if (player.isMovingRight === true) {
+        player.vx += 0.15;
+    } else {
+        if (player.vx > 0) player.vx -= 0.1;
+    }
+
+    if(player.vx > 8)
+        player.vx = 8;
+    else if(player.vx < -8)
+        player.vx = -8;
+
+    player.x += player.vx;
+
+    // Проверка на столкновение с базой
+    if ((player.y + player.height) > base.y && base.y < height && !player.isDead) player.jump();
+
+    // Проверка на падение за пределы экрана
+    if (base.y > height && (player.y + player.height) > height && player.isDead != "lol") player.isDead = true;
+
+    // Зацикливание по горизонтали
+    if (player.x > width) player.x = 0 - player.width;
+    else if (player.x < 0 - player.width) player.x = width;
+
+    // Обновление позиции игрока
+    if (player.y >= (height / 2) - (player.height / 2)) {
+        player.y += player.vy;
+        player.vy += gravity;
+    } else {
+        if (player.vy < 0 && !player.isDead) {
+            // Смещаем платформы и противников вниз только если игрок жив
+            platforms.forEach(function(p, i) {
+                p.y -= player.vy;
+
+                if (p.y > height) {
+                    platforms[i] = new Platform();
+                    platforms[i].y = p.y - height;
                 }
+            });
 
-                if (player.isMovingLeft === true) {
-                    player.vx -= 0.15;
-                } else {
-                    if (player.vx < 0) player.vx += 0.1;
-                }
+            base.y -= player.vy;
 
-                if (player.isMovingRight === true) {
-                    player.vx += 0.15;
-                } else {
-                    if (player.vx > 0) player.vx -= 0.1;
-                }
+            movingEnemies.forEach(function(enemy) {
+                enemy.y -= player.vy;
+            });
+        }
 
-                if(player.vx > 8)
-                    player.vx = 8;
-                else if(player.vx < -8)
-                    player.vx = -8;
+        player.y += player.vy;
+        player.vy += gravity;
 
-                player.x += player.vx;
+        // Увеличиваем очки только если игрок жив
+        if (!player.isDead) {
+            score++;
+        }
+    }
 
-                if ((player.y + player.height) > base.y && base.y < height) player.jump();
+    // Обрабатываем столкновения только если игрок жив
+    if (!player.isDead) {
+        collides();
+    }
 
-                if (base.y > height && (player.y + player.height) > height && player.isDead != "lol") player.isDead = true;
+    if (player.isDead === true) gameOver();
+}
 
-                if (player.x > width) player.x = 0 - player.width;
-                else if (player.x < 0 - player.width) player.x = width;
 
-                if (player.y >= (height / 2) - (player.height / 2)) {
-                    player.y += player.vy;
-                    player.vy += gravity;
-                } else {
-                    if (player.vy < 0) {
-                        platforms.forEach(function(p, i) {
-                            p.y -= player.vy;
 
-                            if (p.y > height) {
-                                platforms[i] = new Platform();
-                                platforms[i].y = p.y - height;
-                            }
-                        });
-
-                        base.y -= player.vy;
-
-                        movingEnemies.forEach(function(enemy) {
-                            enemy.y -= player.vy;
-                        });
-                    }
-
-                    player.vy += gravity;
-
-                    if (player.vy >= 0) {
-                        player.y += player.vy;
-                        player.vy += gravity;
-                    }
-
-                    score++;
-                }
-
-                collides();
-
-                if (player.isDead === true) gameOver();
-            }
             function spawnMovingEnemy() {
     if (frameCount % 60 === 0) { // Каждые 60 кадров
         if (Math.random() < 0.1 && movingEnemies.length < MAX_MOVING_ENEMIES) { // 10% вероятность
@@ -604,6 +615,7 @@
             }
 
             function collides() {
+                if (player.isDead) return; 
                 // Столкновения с движущимися противниками
                 movingEnemies.forEach(function(enemy, index) {
                     if (checkCollision(player, enemy)) {
