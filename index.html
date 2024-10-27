@@ -482,7 +482,7 @@
             document.addEventListener('touchend', handleTouchEnd, false);
 
             function playerCalc() {
-                if (player.isDead) return;
+                
                 if (dir == "left") {
                     player.dir = "left";
                     if (player.vy < -7 && player.vy > -15) player.dir = "left_land";
@@ -522,21 +522,21 @@
                     player.vy += gravity;
                 } else {
                     if (player.vy < 0) {
-        platforms.forEach(function(p, i) {
-            p.y -= player.vy;
+                        platforms.forEach(function(p, i) {
+                            p.y -= player.vy;
 
-            if (p.y > height) {
-                platforms[i] = new Platform();
-                platforms[i].y = p.y - height;
-            }
-        });
+                            if (p.y > height) {
+                                platforms[i] = new Platform();
+                                platforms[i].y = p.y - height;
+                            }
+                        });
 
-        base.y -= player.vy;
+                        base.y -= player.vy;
 
-        movingEnemies.forEach(function(enemy) {
-            enemy.y -= player.vy;
-        });
-    }
+                        movingEnemies.forEach(function(enemy) {
+                            enemy.y -= player.vy;
+                        });
+                    }
 
                     player.vy += gravity;
 
