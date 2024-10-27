@@ -40,6 +40,7 @@
         <!-- Предзагрузка изображений -->
         <img id="sprite" src="./Img/undefined - Imgur-2.png" style="display: none;"/>
         <img id="enemyStatic" src="./Img/enemy.png" style="display: none;"/> <!-- Статический противник -->
+        <img id="movingEnemyImage" src="./Img/movingEnemy.png" style="display: none;"/>
         <!-- Удалено: <img id="enemyScreen" src="./Img/enemy_screen.png" style="display: none;"/> -->
 
         <div id="scoreBoard">
@@ -255,6 +256,44 @@
 
         player = new Player();
 
+        // Класс для движущегося противника
+function MovingEnemy() {
+    this.width = 50; // ширина противника
+    this.height = 50; // высота противника
+
+    // Начальные координаты противника
+    this.x = 0;
+    this.y = height / 2; // Фиксированная вертикальная позиция (можете изменить по желанию)
+
+    this.vx = 2; // Скорость по горизонтали
+
+    // Загрузка изображения противника
+    this.image = new Image();
+    this.image = document.getElementById("movingEnemyImage"); // Укажите правильный путь к изображению
+
+    this.isStopped = false; // Флаг для остановки движения при окончании игры
+
+    this.draw = function() {
+        try {
+            ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+        } catch (e) {
+            console.error('Ошибка при отрисовке движущегося противника:', e);
+        }
+    };
+
+    this.update = function() {
+        if (this.isStopped) return; // Если игра окончена, останавливаем движение
+
+        // Движение противника по горизонтали
+        this.x += this.vx;
+
+        // Проверка столкновения со стенами и изменение направления
+        if (this.x <= 0 || this.x + this.width >= width) {
+            this.vx *= -1;
+        }
+    };
+}
+var movingEnemy = new MovingEnemy();
         // Класс платформы
         function Platform() {
             this.width = 70;
@@ -622,7 +661,23 @@
                             player.jump();
                         }
                     }
+                    if (checkCollision(player, movingEnemy)) {
+        // Если игрок падает сверху на противника
+        if (player.vy > 0 && (player.y + player.height - player.vy <= movingEnemy.y)) {
+            player.jump();
 
+            // Добавляем очки за уничтожение противника
+            score += 200;
+            console.log('Противник уничтожен! Очки:', score);
+
+            // Перемещаем противника в другое место
+            movingEnemy.x = Math.random() * (width - movingEnemy.width);
+            movingEnemy.y = Math.random() * (height / 2); // Можно изменить логику размещения
+        } else {
+            // Столкновение с любой другой стороны приводит к проигрышу
+            player.isDead = true;
+        }
+    }
                     // Столкновение с противником
                     if (p.hasStaticEnemy && p.staticEnemy) {
                         if (checkCollision(player, p.staticEnemy)) {
@@ -711,7 +766,7 @@
 
 
             // Функция окончания игры
-            function gameOver() {
+function gameOver() {
                 
     platforms.forEach(function(p, i) {
         p.y -= 12;
@@ -725,6 +780,7 @@
         showGoMenu();
         hideScore();
         player.isDead = "lol";
+        movingEnemy.isStopped = true;
 
         var goScoreText = document.getElementById("go_score");
         goScoreText.innerHTML = "Вы набрали " + score + " очков!";
@@ -780,6 +836,8 @@ if (telegramId) {
                 playerCalc();
                 player.draw();
                 base.draw();
+                movingEnemy.update(); // Обновляем позицию противника
+                movingEnemy.draw();  
                 updateScore();
             }
 
@@ -808,6 +866,7 @@ if (telegramId) {
             base = new Base();
             player = new Player();
             platform_broken_substitute = new Platform_broken_substitute();
+            movingEnemy = new MovingEnemy();
 
             platforms = [];
             for (var i = 0; i < platformCount; i++) {
