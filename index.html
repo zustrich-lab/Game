@@ -261,16 +261,7 @@
             };
 
             this.update = function() {
-<<<<<<< HEAD
-                if (this.isStopped) return;
 
-                this.x += this.vx;
-
-                if (this.x <= 0 || this.x + this.width >= width) {
-                    this.vx *= -1;
-                }
-            };
-=======
     if (this.isStopped) return;
 
     // Движение противника по горизонтали
@@ -285,7 +276,7 @@
         this.isOffScreen = true;
     }
 };
->>>>>>> 7472d909dd27d1053e6572bfe7c76f57e9b453b0
+
         }
 
         // Класс платформы
@@ -331,11 +322,8 @@
             var rand = Math.random();
             if (rand < 0.5) { // 50% вероятность монеты
                 this.coin = new Coin(this);
-<<<<<<< HEAD
-            } else if (rand < 0.7) { // 20% вероятность статического противника
-=======
+
             } else if (rand < 0.1) { // 20% вероятность статического противника
->>>>>>> 7472d909dd27d1053e6572bfe7c76f57e9b453b0
                 this.hasStaticEnemy = true;
                 this.staticEnemy = new StaticEnemy(this);
             } else if (rand < 0.8) { // 10% вероятность пружины
@@ -570,17 +558,12 @@
             }
 
             function spawnMovingEnemy() {
-<<<<<<< HEAD
-                if (movingEnemies.length < 1 && Math.random() < 0.05) { // Максимум 1 противник
-                    movingEnemies.push(new MovingEnemy());
-                }
-            }
-=======
+                
     if (movingEnemies.length < 1 && Math.random() < 0.1) { // 10% вероятность
         movingEnemies.push(new MovingEnemy());
     }
 }
->>>>>>> 7472d909dd27d1053e6572bfe7c76f57e9b453b0
+
 
             function springCalc() {
                 platforms.forEach(function(p) {
@@ -782,8 +765,7 @@
                 base.draw();
 
                 movingEnemies.forEach(function(enemy) {
-<<<<<<< HEAD
-=======
+
     enemy.update();
     enemy.draw();
 });
@@ -794,7 +776,7 @@ movingEnemies = movingEnemies.filter(function(enemy) {
 });
 
                 movingEnemies.forEach(function(enemy) {
->>>>>>> 7472d909dd27d1053e6572bfe7c76f57e9b453b0
+
                     enemy.update();
                     enemy.draw();
                 });
