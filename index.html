@@ -12,7 +12,17 @@
             Ваш браузер не поддерживает HTML5!
         </canvas>
 
-        <div id="mainMenu">       
+        <div id="mainMenu">
+            <h1>Doodle Jump</h1>
+            <h3>Используя HTML5,</h3>
+            <h3>...от <a href="https://codepen.io/FRADAR" target="_blank">FRADAR</a></h3>
+
+            <p class="info">
+                Используйте
+                <span class="key left">←</span>
+                <span class="key right">→</span>
+                для движения и (пере)запуска игры
+            </p>
             <a class="button" href="javascript:init()">Играть</a>
         </div>
         
@@ -21,8 +31,10 @@
             <h3 id="go_score">Вы набрали 0 очков</h3>
             <h3 id="go_coins">Вы собрали 0 монет</h3>
 
-            <a class="buttonreset" href="javascript:reset()">Play<br/>again</a>
-          
+            <a class="button" href="javascript:reset()">Перезапустить</a>
+            <a id="tweetBtn" target="_blank" class="button tweet" href="#">Твитнуть результат</a>
+
+            <a id="fbBtn" target="_blank" class="button fb" href="#">Опубликовать в Facebook</a>
         </div>
         
         <!-- Предзагрузка изображений -->
@@ -84,6 +96,7 @@
             firstRun = true;
 
         var movingEnemies = []; // Массив для движущихся противников
+        var isGameOver = false; // Флаг состояния игры
 
         // Объект базы
         var Base = function() {
@@ -418,6 +431,7 @@
 
             firstRun = false;
             movingEnemies = [];
+            isGameOver = false; // Игра началась
 
             function paintCanvas() {
                 ctx.clearRect(0, 0, width, height);
@@ -693,10 +707,13 @@
             }
 
             function gameOver() {
+                isGameOver = true; // Игра окончена
+
                 platforms.forEach(function(p, i) {
                     p.y -= 12;
                 });
 
+                // Останавливаем движущихся противников
                 movingEnemies.forEach(function(enemy) {
                     enemy.isStopped = true;
                 });
@@ -757,12 +774,20 @@
                 player.draw();
                 base.draw();
 
-                movingEnemies.forEach(function(enemy, index) {
-                    enemy.update(index);
-                    enemy.draw();
-                });
+                if (!isGameOver) {
+                    movingEnemies.forEach(function(enemy, index) {
+                        enemy.update(index);
+                        enemy.draw();
+                    });
 
-                spawnMovingEnemy();
+                    spawnMovingEnemy();
+                } else {
+                    // Если игра окончена, просто отрисовываем противников без обновления их позиции
+                    movingEnemies.forEach(function(enemy) {
+                        enemy.draw();
+                    });
+                }
+
                 updateScore();
             }
 
@@ -782,7 +807,8 @@
             hideGoMenu();
             showScore();
             player.isDead = false;
-            
+            isGameOver = false; // Сбрасываем флаг состояния игры
+
             flag = 0;
             position = 0;
             score = 0;
