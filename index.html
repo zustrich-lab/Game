@@ -12,17 +12,7 @@
             Ваш браузер не поддерживает HTML5!
         </canvas>
 
-        <div id="mainMenu">
-            <h1>Doodle Jump</h1>
-            <h3>Используя HTML5,</h3>
-            <h3>...от <a href="https://codepen.io/FRADAR" target="_blank">FRADAR</a></h3>
-
-            <p class="info">
-                Используйте
-                <span class="key left">←</span>
-                <span class="key right">→</span>
-                для движения и (пере)запуска игры
-            </p>
+        <div id="mainMenu">       
             <a class="button" href="javascript:init()">Играть</a>
         </div>
         
@@ -31,10 +21,8 @@
             <h3 id="go_score">Вы набрали 0 очков</h3>
             <h3 id="go_coins">Вы собрали 0 монет</h3>
 
-            <a class="button" href="javascript:reset()">Перезапустить</a>
-            <a id="tweetBtn" target="_blank" class="button tweet" href="#">Твитнуть результат</a>
-
-            <a id="fbBtn" target="_blank" class="button fb" href="#">Опубликовать в Facebook</a>
+            <a class="buttonreset" href="javascript:reset()">Play<br/>again</a>
+          
         </div>
         
         <!-- Предзагрузка изображений -->
@@ -96,7 +84,6 @@
             firstRun = true;
 
         var movingEnemies = []; // Массив для движущихся противников
-        var isGameOver = false; // Флаг состояния игры
 
         // Объект базы
         var Base = function() {
@@ -280,8 +267,8 @@
                     this.vx *= -1;
                 }
 
-                // Проверяем, вышел ли противник за пределы экрана по вертикали
-                if (this.y > height || this.y + this.height < 0) {
+                // Удаляем противника только если он вышел за нижнюю границу экрана
+                if (this.y > height) {
                     movingEnemies.splice(index, 1);
                 }
             };
@@ -424,18 +411,75 @@
         const queryParams = getQueryParams();
         const userIdFromTelegram = queryParams.userId || null;
 
+        // Обработчики событий клавиатуры и касаний
+        function handleKeyDown(e) {
+            var key = e.keyCode;
+            
+            if (key == 37) { // Влево
+                dir = "left";
+                player.isMovingLeft = true;
+            } else if (key == 39) { // Вправо
+                dir = "right";
+                player.isMovingRight = true;
+            }
+            
+            if(key == 32) { // Пробел
+                if(firstRun === true)
+                    init();
+                else 
+                    reset();
+            }
+        }
+
+        function handleKeyUp(e) {
+            var key = e.keyCode;
+        
+            if (key == 37) { // Влево
+                dir = "left";
+                player.isMovingLeft = false;
+            } else if (key == 39) { // Вправо
+                dir = "right";
+                player.isMovingRight = false;
+            }
+        }
+
+        function handleTouchStart(evt) {
+            let touchX = evt.touches[0].clientX;
+            
+            if (touchX < window.innerWidth / 2) {
+                dir = "left";
+                player.isMovingLeft = true;
+                player.isMovingRight = false;
+            } else {
+                dir = "right";
+                player.isMovingRight = true;
+                player.isMovingLeft = false;
+            }
+        }
+
+        function handleTouchEnd() {
+            player.isMovingLeft = false;
+            player.isMovingRight = false;
+        }
+
         // Функция инициализации игры
         function init() {
-            var dir = "left",
-                jumpCount = 0;
+            dir = "left";
+            var jumpCount = 0;
 
             firstRun = false;
             movingEnemies = [];
-            isGameOver = false; // Игра началась
 
             function paintCanvas() {
                 ctx.clearRect(0, 0, width, height);
             }
+
+            // Добавление обработчиков событий
+            document.onkeydown = handleKeyDown;
+            document.onkeyup = handleKeyUp;
+
+            document.addEventListener('touchstart', handleTouchStart, false);
+            document.addEventListener('touchend', handleTouchEnd, false);
 
             function playerCalc() {
                 if (dir == "left") {
@@ -444,63 +488,6 @@
                 } else if (dir == "right") {
                     player.dir = "right";
                     if (player.vy < -7 && player.vy > -15) player.dir = "right_land";
-                }
-
-                // Обработчики нажатий клавиш
-                document.onkeydown = function(e) {
-                    var key = e.keyCode;
-                    
-                    if (key == 37) { // Влево
-                        dir = "left";
-                        player.isMovingLeft = true;
-                    } else if (key == 39) { // Вправо
-                        dir = "right";
-                        player.isMovingRight = true;
-                    }
-                    
-                    if(key == 32) { // Пробел
-                        if(firstRun === true)
-                            init();
-                        else 
-                            reset();
-                    }
-                };
-
-                document.onkeyup = function(e) {
-                    var key = e.keyCode;
-                
-                    if (key == 37) { // Влево
-                        dir = "left";
-                        player.isMovingLeft = false;
-                    } else if (key == 39) { // Вправо
-                        dir = "right";
-                        player.isMovingRight = false;
-                    }
-                };
-                
-                // Обработка касаний
-                document.removeEventListener('touchstart', handleTouchStart, false);
-                document.removeEventListener('touchend', handleTouchEnd, false);
-                document.addEventListener('touchstart', handleTouchStart, false);
-                document.addEventListener('touchend', handleTouchEnd, false);
-
-                function handleTouchStart(evt) {
-                    let touchX = evt.touches[0].clientX;
-                    
-                    if (touchX < window.innerWidth / 2) {
-                        dir = "left";
-                        player.isMovingLeft = true;
-                        player.isMovingRight = false;
-                    } else {
-                        dir = "right";
-                        player.isMovingRight = true;
-                        player.isMovingLeft = false;
-                    }
-                }
-
-                function handleTouchEnd() {
-                    player.isMovingLeft = false;
-                    player.isMovingRight = false;
                 }
 
                 if (player.isMovingLeft === true) {
@@ -533,22 +520,22 @@
                     player.y += player.vy;
                     player.vy += gravity;
                 } else {
-                    platforms.forEach(function(p, i) {
-                        if (player.vy < 0) {
+                    if (player.vy < 0) {
+                        platforms.forEach(function(p, i) {
                             p.y -= player.vy;
-                        }
 
-                        if (p.y > height) {
-                            platforms[i] = new Platform();
-                            platforms[i].y = p.y - height;
-                        }
-                    });
+                            if (p.y > height) {
+                                platforms[i] = new Platform();
+                                platforms[i].y = p.y - height;
+                            }
+                        });
 
-                    base.y -= player.vy;
+                        base.y -= player.vy;
 
-                    movingEnemies.forEach(function(enemy) {
-                        enemy.y -= player.vy;
-                    });
+                        movingEnemies.forEach(function(enemy) {
+                            enemy.y -= player.vy;
+                        });
+                    }
 
                     player.vy += gravity;
 
@@ -568,7 +555,10 @@
             function spawnMovingEnemy() {
                 // Спавним движущегося противника с шансом 10%
                 if (movingEnemies.length < 1 && Math.random() < 0.1) {
-                    movingEnemies.push(new MovingEnemy());
+                    let enemy = new MovingEnemy();
+                    // Устанавливаем позицию противника ниже текущей позиции игрока
+                    enemy.y = player.y + height / 2 + Math.random() * (height / 2);
+                    movingEnemies.push(enemy);
                 }
             }
 
@@ -707,13 +697,10 @@
             }
 
             function gameOver() {
-                isGameOver = true; // Игра окончена
-
                 platforms.forEach(function(p, i) {
                     p.y -= 12;
                 });
 
-                // Останавливаем движущихся противников
                 movingEnemies.forEach(function(enemy) {
                     enemy.isStopped = true;
                 });
@@ -774,20 +761,12 @@
                 player.draw();
                 base.draw();
 
-                if (!isGameOver) {
-                    movingEnemies.forEach(function(enemy, index) {
-                        enemy.update(index);
-                        enemy.draw();
-                    });
+                movingEnemies.forEach(function(enemy, index) {
+                    enemy.update(index);
+                    enemy.draw();
+                });
 
-                    spawnMovingEnemy();
-                } else {
-                    // Если игра окончена, просто отрисовываем противников без обновления их позиции
-                    movingEnemies.forEach(function(enemy) {
-                        enemy.draw();
-                    });
-                }
-
+                spawnMovingEnemy();
                 updateScore();
             }
 
@@ -807,8 +786,7 @@
             hideGoMenu();
             showScore();
             player.isDead = false;
-            isGameOver = false; // Сбрасываем флаг состояния игры
-
+            
             flag = 0;
             position = 0;
             score = 0;
