@@ -29,7 +29,7 @@
         <div id="gameOverMenu">
             <h1>Игра окончена!</h1>
             <h3 id="go_score">Вы набрали 0 очков</h3>
-            <h3 id="go_coins">Вы собрали 0 монет</h3> <!-- Изменено: добавлено отображение монет -->
+            <h3 id="go_coins">Вы собрали 0 монет</h3>
 
             <a class="button" href="javascript:reset()">Перезапустить</a>
             <a id="tweetBtn" target="_blank" class="button tweet" href="#">Твитнуть результат</a>
@@ -39,13 +39,12 @@
         
         <!-- Предзагрузка изображений -->
         <img id="sprite" src="./Img/undefined - Imgur-2.png" style="display: none;"/>
-        <img id="enemyStatic" src="./Img/enemy.png" style="display: none;"/> <!-- Статический противник -->
+        <img id="enemyStatic" src="./Img/enemy.png" style="display: none;"/>
         <img id="movingEnemyImage" src="./Img/movingEnemy.png" style="display: none;"/>
-        <!-- Удалено: <img id="enemyScreen" src="./Img/enemy_screen.png" style="display: none;"/> -->
 
         <div id="scoreBoard">
-            <p id="score">Очки: 0</p> <!-- Изменено: добавлено текстовое описание -->
-            <p id="coins">Монеты: 0</p> <!-- Изменено: добавлено отображение монет -->
+            <p id="score">Очки: 0</p>
+            <p id="coins">Монеты: 0</p>
         </div>
     </div>
 
@@ -93,8 +92,10 @@
             broken = 0,
             dir,
             score = 0,
-            coinsCollected = 0, // Изменено: добавлена переменная для монет
+            coinsCollected = 0,
             firstRun = true;
+
+        var movingEnemies = []; // Массив для движущихся противников
 
         // Объект базы
         var Base = function() {
@@ -123,16 +124,15 @@
 
         // Класс монеты
         function Coin(platform) {
-            this.width = 30; // ширина монеты
-            this.height = 30; // высота монеты
+            this.width = 30;
+            this.height = 30;
 
-            this.platform = platform; // ссылка на платформу
+            this.platform = platform;
 
-            this.collected = false; // статус сбора
+            this.collected = false;
 
             this.draw = function() {
                 if (!this.collected) {
-                    // Расчет позиции монеты относительно платформы
                     let x = this.platform.x + (this.platform.width - this.width) / 2;
                     let y = this.platform.y - this.height - 10;
                     try {
@@ -145,24 +145,21 @@
 
             this.collect = function() {
                 this.collected = true;
-                coinsCollected += 1; // Изменено: увеличиваем количество монет
-                // Опционально: добавить звук или анимацию сбора монеты
+                coinsCollected += 1;
                 console.log('Монета собрана! Всего монет:', coinsCollected);
             };
         }
 
-        // Класс Статического Противника
+        // Класс статического противника
         function StaticEnemy(platform) {
-            this.width = 40; // ширина противника
-            this.height = 40; // высота противника
+            this.width = 40;
+            this.height = 40;
 
-            this.platform = platform; // ссылка на платформу
+            this.platform = platform;
 
-            // Позиция противника относительно платформы
             this.x = this.platform.x + (this.platform.width - this.width) / 2;
             this.y = this.platform.y - this.height - 10;
 
-            // Загрузка изображения статического противника
             this.image = enemyStaticImage;
 
             this.draw = function() {
@@ -173,26 +170,22 @@
                 }
             };
 
-            // Метод обновления позиции (нет необходимости для статического противника)
             this.update = function() {
-                // Обновляем позицию относительно платформы
                 this.x = this.platform.x + (this.platform.width - this.width) / 2;
                 this.y = this.platform.y - this.height - 10;
             };
         }
 
-        // Класс Пружины
+        // Класс пружины
         function Spring(platform) {
             this.width = 26;
             this.height = 30;
 
-            this.platform = platform; // ссылка на платформу
+            this.platform = platform;
 
-            // Позиция пружины относительно платформы
             this.x = this.platform.x + (this.platform.width - this.width) / 2;
             this.y = this.platform.y - this.height - 10;
 
-            // Обрезка спрайта
             this.cx = 0;
             this.cy = 445;
             this.cwidth = 45;
@@ -222,7 +215,6 @@
             this.width = 55;
             this.height = 40;
 
-            // Обрезка спрайта
             this.cx = 0;
             this.cy = 0;
             this.cwidth = 110;
@@ -233,7 +225,6 @@
             this.x = width / 2 - this.width / 2;
             this.y = height;
 
-            // Функция отрисовки
             this.draw = function() {
                 try {
                     if (this.dir == "right") this.cy = 121;
@@ -256,44 +247,39 @@
 
         player = new Player();
 
-        var movingEnemies = []; // Массив для движущихся противников // Класс для движущегося противника
-// Класс для движущегося противника
-function MovingEnemy() {
-    this.width = 50; // ширина противника
-    this.height = 50; // высота противника
+        // Класс для движущегося противника
+        function MovingEnemy() {
+            this.width = 50;
+            this.height = 50;
 
-    // Начальные координаты противника
-    this.x = Math.random() * (width - this.width);
-    this.y = Math.random() * (height - 200) + 100; // Случайная позиция по вертикали
+            this.x = Math.random() * (width - this.width);
+            this.y = Math.random() * (height - 200) + 100;
 
-    this.vx = 2; // Скорость по горизонтали
+            this.vx = 2;
 
-    // Загрузка изображения противника
-    this.image = document.getElementById("movingEnemyImage");
+            this.image = document.getElementById("movingEnemyImage");
 
-    this.isStopped = false; // Флаг для остановки движения при окончании игры
+            this.isStopped = false;
 
-    this.draw = function() {
-        try {
-            ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
-        } catch (e) {
-            console.error('Ошибка при отрисовке движущегося противника:', e);
+            this.draw = function() {
+                try {
+                    ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+                } catch (e) {
+                    console.error('Ошибка при отрисовке движущегося противника:', e);
+                }
+            };
+
+            this.update = function() {
+                if (this.isStopped) return;
+
+                this.x += this.vx;
+
+                if (this.x <= 0 || this.x + this.width >= width) {
+                    this.vx *= -1;
+                }
+            };
         }
-    };
 
-    this.update = function() {
-        if (this.isStopped) return; // Если игра окончена, останавливаем движение
-
-        // Движение противника по горизонтали
-        this.x += this.vx;
-
-        // Проверка столкновения со стенами и изменение направления
-        if (this.x <= 0 || this.x + this.width >= width) {
-            this.vx *= -1;
-        }
-    };
-}
-var movingEnemy = new MovingEnemy();
         // Класс платформы
         function Platform() {
             this.width = 70;
@@ -307,7 +293,6 @@ var movingEnemy = new MovingEnemy();
             this.flag = 0;
             this.state = 0;
 
-            // Обрезка спрайта
             this.cx = 0;
             this.cy = 0;
             this.cwidth = 105;
@@ -334,24 +319,21 @@ var movingEnemy = new MovingEnemy();
             this.moved = 0;
             this.vx = 1;
 
-            // Привязка монеты к платформе с 50% вероятностью
-            if (Math.random() < 0.5) { // 50% вероятность
+            // Привязка монеты, противника или пружины к платформе
+            var rand = Math.random();
+            if (rand < 0.5) { // 50% вероятность монеты
                 this.coin = new Coin(this);
-            } else {
-                // Если монеты нет, возможно, добавим противника или пружину
-                if (Math.random() < 0.2) { // 20% вероятность для противника
-                    this.hasStaticEnemy = true;
-                    this.staticEnemy = new StaticEnemy(this);
-                } else if (Math.random() < 0.5) { // 10% вероятность для пружины (0.2 * 0.5 = 0.1)
-                    this.spring = new Spring(this);
-                }
+            } else if (rand < 0.7) { // 20% вероятность статического противника
+                this.hasStaticEnemy = true;
+                this.staticEnemy = new StaticEnemy(this);
+            } else if (rand < 0.8) { // 10% вероятность пружины
+                this.spring = new Spring(this);
             }
 
-            // Добавленный метод для удаления статического противника
             this.removeStaticEnemy = function() {
                 this.hasStaticEnemy = false;
                 this.staticEnemy = null;
-                score += 200; // Дополнительные очки за уничтожение противника
+                score += 200;
                 console.log('Противник уничтожен! Очки:', score);
             }
 
@@ -366,44 +348,30 @@ var movingEnemy = new MovingEnemy();
 
                     ctx.drawImage(image, this.cx, this.cy, this.cwidth, this.cheight, this.x, this.y, this.width, this.height);
 
-                    // Рисуем монету, если она существует и не собрана
                     if (this.coin && !this.coin.collected) {
                         this.coin.draw();
                     }
 
-                    // Рисуем статического противника, если он есть
                     if (this.hasStaticEnemy && this.staticEnemy) {
                         this.staticEnemy.draw();
                     }
 
-                    // Рисуем пружину, если она есть
                     if (this.spring) {
                         this.spring.draw();
                     }
                 } catch (e) {
-                    console.error('Ошибка при отрисовке платформы, монеты, противника или пружины:', e);
+                    console.error('Ошибка при отрисовке платформы или её элементов:', e);
                 }
             };
 
-            
-
             this.update = function() {
-                // Обновляем платформу
                 if (this.type == 2) {
                     if (this.x < 0 || this.x + this.width > width) this.vx *= -1;
-
                     this.x += this.vx;
                 }
 
-                // Обновляем статического противника
                 if (this.hasStaticEnemy && this.staticEnemy) {
                     this.staticEnemy.update();
-                }
-
-                // Обновляем пружину
-                if (this.spring) {
-                    // Пружина фиксирована относительно платформы, нет необходимости в обновлении
-                    // Однако, можно добавить анимацию или другие изменения состояния
                 }
             };
         }
@@ -420,7 +388,6 @@ var movingEnemy = new MovingEnemy();
             this.x = 0;
             this.y = 0;
 
-            // Обрезка спрайта
             this.cx = 0;
             this.cy = 554;
             this.cwidth = 105;
@@ -431,27 +398,37 @@ var movingEnemy = new MovingEnemy();
             this.draw = function() {
                 try {
                     if (this.appearance === true) ctx.drawImage(image, this.cx, this.cy, this.cwidth, this.cheight, this.x, this.y, this.width, this.height);
-                    else return;
                 } catch (e) {}
             };
         };
 
         var platform_broken_substitute = new Platform_broken_substitute();
 
+        // Функция для извлечения параметров из URL
+        function getQueryParams() {
+            const params = {};
+            window.location.search.substring(1).split("&").forEach(function(part) {
+                const [key, value] = part.split("=");
+                if (key) params[decodeURIComponent(key)] = decodeURIComponent(value);
+            });
+            return params;
+        }
+
+        const queryParams = getQueryParams();
+        const userIdFromTelegram = queryParams.userId || null;
+
         // Функция инициализации игры
         function init() {
-            // Переменные для игры
             var dir = "left",
                 jumpCount = 0;
-            
+
             firstRun = false;
-            movingEnemies = []; 
-            // Функция очистки холста
+            movingEnemies = [];
+
             function paintCanvas() {
                 ctx.clearRect(0, 0, width, height);
             }
 
-            // Функция вычислений и логики игрока
             function playerCalc() {
                 if (dir == "left") {
                     player.dir = "left";
@@ -503,12 +480,10 @@ var movingEnemy = new MovingEnemy();
                     let touchX = evt.touches[0].clientX;
                     
                     if (touchX < window.innerWidth / 2) {
-                        // Касание левой половины экрана - движение влево
                         dir = "left";
                         player.isMovingLeft = true;
                         player.isMovingRight = false;
                     } else {
-                        // Касание правой половины экрана - движение вправо
                         dir = "right";
                         player.isMovingRight = true;
                         player.isMovingLeft = false;
@@ -516,12 +491,10 @@ var movingEnemy = new MovingEnemy();
                 }
 
                 function handleTouchEnd() {
-                    // Остановка движения при убирании пальца с экрана
                     player.isMovingLeft = false;
                     player.isMovingRight = false;
                 }
 
-                // Ускорение при удерживании клавиш
                 if (player.isMovingLeft === true) {
                     player.vx -= 0.15;
                 } else {
@@ -534,52 +507,41 @@ var movingEnemy = new MovingEnemy();
                     if (player.vx > 0) player.vx -= 0.1;
                 }
 
-                // Ограничение скорости
                 if(player.vx > 8)
                     player.vx = 8;
                 else if(player.vx < -8)
                     player.vx = -8;
 
-                // Обновление позиции игрока
                 player.x += player.vx;
 
-                // Прыжок игрока при столкновении с базой
                 if ((player.y + player.height) > base.y && base.y < height) player.jump();
 
-                // Игра окончена, если игрок касается нижней части экрана
                 if (base.y > height && (player.y + player.height) > height && player.isDead != "lol") player.isDead = true;
 
-                // Проход через стены
                 if (player.x > width) player.x = 0 - player.width;
                 else if (player.x < 0 - player.width) player.x = width;
 
-                // Движение игрока под действием гравитации
                 if (player.y >= (height / 2) - (player.height / 2)) {
                     player.y += player.vy;
                     player.vy += gravity;
-                }
-
-                // Когда игрок достигает половины высоты экрана, движем платформы для создания иллюзии прокрутки
-                else {
+                } else {
                     platforms.forEach(function(p, i) {
-
                         if (player.vy < 0) {
                             p.y -= player.vy;
-                            // Обновляем только y позицию платформы
-                            // Статические противники будут обновлять свои позиции с платформой
                         }
 
                         if (p.y > height) {
                             platforms[i] = new Platform();
                             platforms[i].y = p.y - height;
                         }
-
                     });
 
                     base.y -= player.vy;
+
                     movingEnemies.forEach(function(enemy) {
-        enemy.y -= player.vy;
-    });
+                        enemy.y -= player.vy;
+                    });
+
                     player.vy += gravity;
 
                     if (player.vy >= 0) {
@@ -590,23 +552,22 @@ var movingEnemy = new MovingEnemy();
                     score++;
                 }
 
-                // Столкновения с платформами и пружинами
                 collides();
 
                 if (player.isDead === true) gameOver();
             }
+
             function spawnMovingEnemy() {
-    if (Math.random() < 0.05) { // 5% вероятность
-        movingEnemies.push(new MovingEnemy());
-    }
-}
-            // Алгоритмы пружины
+                if (movingEnemies.length < 1 && Math.random() < 0.05) { // Максимум 1 противник
+                    movingEnemies.push(new MovingEnemy());
+                }
+            }
+
             function springCalc() {
                 platforms.forEach(function(p) {
                     if (p.spring) {
-                        // Обновляем позицию пружины относительно платформы
                         p.spring.x = p.x + (p.width - p.spring.width) / 2;
-                        p.spring.y = p.y - p.height - 10;
+                        p.spring.y = p.y - p.spring.height - 10;
 
                         if (p.spring.y > height / 1.1) p.spring.state = 0;
 
@@ -615,16 +576,11 @@ var movingEnemy = new MovingEnemy();
                 });
             }
 
-            // Алгоритм горизонтального движения платформ
             function platformCalc() {
                 var subs = platform_broken_substitute;
 
                 platforms.forEach(function(p, i) {
-                    p.update(); // Обновляем платформу и противников
-
-                    if (p.type == 2) {
-                        // Уже обработано в методе update()
-                    }
+                    p.update();
 
                     if (p.flag == 1 && subs.appearance === false && jumpCount === 0) {
                         subs.x = p.x;
@@ -645,31 +601,25 @@ var movingEnemy = new MovingEnemy();
                 if (subs.y > height) subs.appearance = false;
             }
 
-            // Функция столкновений
             function collides() {
-
                 // Столкновения с движущимися противниками
-movingEnemies.forEach(function(enemy, index) {
-    if (checkCollision(player, enemy)) {
-        // Если игрок падает сверху на противника
-        if (player.vy > 0 && (player.y + player.height - player.vy <= enemy.y)) {
-            player.jump();
+                movingEnemies.forEach(function(enemy, index) {
+                    if (checkCollision(player, enemy)) {
+                        if (player.vy > 0 && (player.y + player.height - player.vy <= enemy.y)) {
+                            player.jump();
 
-            // Добавляем очки за уничтожение противника
-            score += 200;
-            console.log('Противник уничтожен! Очки:', score);
+                            score += 200;
+                            console.log('Противник уничтожен! Очки:', score);
 
-            // Удаляем противника из массива
-            movingEnemies.splice(index, 1);
-        } else {
-            // Столкновение с любой другой стороны приводит к проигрышу
-            player.isDead = true;
-        }
-    }
-});
+                            movingEnemies.splice(index, 1);
+                        } else {
+                            player.isDead = true;
+                        }
+                    }
+                });
+
                 // Столкновения с платформами
                 platforms.forEach(function(p, i) {
-                    // Столкновение с платформой
                     if (player.vy > 0 && p.state === 0 &&
                         (player.x + 15 < p.x + p.width) &&
                         (player.x + player.width - 15 > p.x) &&
@@ -688,35 +638,14 @@ movingEnemies.forEach(function(enemy, index) {
                             player.jump();
                         }
                     }
-                    if (checkCollision(player, movingEnemy)) {
-        // Если игрок падает сверху на противника
-        if (player.vy > 0 && (player.y + player.height - player.vy <= movingEnemy.y)) {
-            player.jump();
 
-            // Добавляем очки за уничтожение противника
-            score += 200;
-            console.log('Противник уничтожен! Очки:', score);
-
-            // Перемещаем противника в другое место
-            movingEnemy.x = Math.random() * (width - movingEnemy.width);
-            movingEnemy.y = Math.random() * (height / 2); // Можно изменить логику размещения
-        } else {
-            // Столкновение с любой другой стороны приводит к проигрышу
-            player.isDead = true;
-        }
-    }
-                    // Столкновение с противником
+                    // Столкновение с противником на платформе
                     if (p.hasStaticEnemy && p.staticEnemy) {
                         if (checkCollision(player, p.staticEnemy)) {
-                            // Определяем направление столкновения
                             if (player.vy > 0 && (player.y + player.height - player.vy <= p.staticEnemy.y)) {
-                                // Игрок прыгает на противника
                                 player.jump();
-
-                                // Удаляем противника
                                 p.removeStaticEnemy();
                             } else {
-                                // Столкновение с другой стороны – игрок погибает
                                 player.isDead = true;
                             }
                         }
@@ -726,10 +655,7 @@ movingEnemies.forEach(function(enemy, index) {
                     if (p.spring) {
                         if (checkCollision(player, p.spring)) {
                             if (player.vy > 0 && (player.y + player.height - player.vy <= p.spring.y)) {
-                                // Игрок прыгает высоко
                                 player.jumpHigh();
-
-                                // Изменяем состояние пружины (если нужно)
                                 p.spring.state = 1;
                             }
                         }
@@ -739,7 +665,6 @@ movingEnemies.forEach(function(enemy, index) {
                 // Столкновения с монетами
                 platforms.forEach(function(p) {
                     if (p.coin && !p.coin.collected) {
-                        // Расчет позиции монеты относительно платформы
                         let coinX = p.x + (p.width - p.coin.width) / 2;
                         let coinY = p.y - p.coin.height - 10;
 
@@ -755,116 +680,80 @@ movingEnemies.forEach(function(enemy, index) {
                 });
             }
 
-            // Функция проверки столкновения
-            function checkCollision(player, enemy) {
+            function checkCollision(a, b) {
                 return (
-                    player.x < enemy.x + enemy.width &&
-                    player.x + player.width > enemy.x &&
-                    player.y < enemy.y + enemy.height &&
-                    player.y + player.height > enemy.y
+                    a.x < b.x + b.width &&
+                    a.x + a.width > b.x &&
+                    a.y < b.y + b.height &&
+                    a.y + a.height > b.y
                 );
             }
 
-            // Функция обновления счета и монет
             function updateScore() {
                 var scoreText = document.getElementById("score");
-                scoreText.innerHTML = "Очки: " + score; // Изменено: добавлено текстовое описание
+                scoreText.innerHTML = "Очки: " + score;
 
                 var coinsText = document.getElementById("coins");
-                coinsText.innerHTML = "Монеты: " + coinsCollected; // Изменено: отображение монет
+                coinsText.innerHTML = "Монеты: " + coinsCollected;
             }
 
-            function getQueryParams() {
-    const params = {};
-    window.location.search.substring(1).split("&").forEach(function(part) {
-      const [key, value] = part.split("=");
-      if (key) params[decodeURIComponent(key)] = decodeURIComponent(value);
-    });
-    return params;
-  }
+            function gameOver() {
+                platforms.forEach(function(p, i) {
+                    p.y -= 12;
+                });
 
-  const queryParams = getQueryParams();
-  const userIdFromTelegram = queryParams.userId || null;
+                movingEnemies.forEach(function(enemy) {
+                    enemy.isStopped = true;
+                });
 
-  // Проверка наличия userId
-  if (!userIdFromTelegram) {
-    console.error('userId не передан в URL');
-  }
+                if(player.y > height/2 && flag === 0) {
+                    player.y -= 8;
+                    player.vy = 0;
+                } else if(player.y < height / 2) flag = 1;
+                else if(player.y + player.height > height) {
+                    showGoMenu();
+                    hideScore();
+                    player.isDead = "lol";
 
+                    var goScoreText = document.getElementById("go_score");
+                    goScoreText.innerHTML = "Вы набрали " + score + " очков!";
 
-            // Функция окончания игры
-function gameOver() {
-                
-    platforms.forEach(function(p, i) {
-        p.y -= 12;
-    });
-    movingEnemies.forEach(function(enemy) {
-        enemy.isStopped = true;
-    });
+                    var goCoinsText = document.getElementById("go_coins");
+                    goCoinsText.innerHTML = "Вы собрали " + coinsCollected + " монет!";
 
-    if(player.y > height/2 && flag === 0) {
-        player.y -= 8;
-        player.vy = 0;
-    } else if(player.y < height / 2) flag = 1;
-    else if(player.y + player.height > height) {
-        showGoMenu();
-        hideScore();
-        player.isDead = "lol";
-        movingEnemy.isStopped = true;
+                    // Отправка данных на сервер
+                    const telegramId = userIdFromTelegram;
 
-        var goScoreText = document.getElementById("go_score");
-        goScoreText.innerHTML = "Вы набрали " + score + " очков!";
+                    if (telegramId) {
+                        fetch('https://testforeveryoneback-production.up.railway.app/api/save-game-result', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                telegramId: telegramId,
+                                score: score,
+                                coins: coinsCollected,
+                                timestamp: new Date().toISOString()
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                console.log('Результаты игры успешно сохранены.');
+                            } else {
+                                console.error('Не удалось сохранить результаты игры:', data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Ошибка при сохранении результатов игры:', error);
+                        });
+                    } else {
+                        console.error('Telegram ID не найден!');
+                    }
+                }
+            }
 
-        var goCoinsText = document.getElementById("go_coins");
-        goCoinsText.innerHTML = "Вы собрали " + coinsCollected + " монет!";
-
-        var tweet = document.getElementById("tweetBtn");
-        tweet.href='https://twitter.com/share?url=http://is.gd/PnFFzu&text=I just scored ' + score + ' points and collected ' + coinsCollected + ' coins in the HTML5 Doodle Jump game!&count=horiztonal&via=cssdeck&related=solitarydesigns';
-
-        var facebook = document.getElementById("fbBtn");
-        facebook.href='https://facebook.com/sharer.php?s=100&p[url]=http://cssdeck.com/labs/html5-doodle-jump/8&p[title]=I just scored ' + score + ' points and collected ' + coinsCollected + ' coins in the HTML5 Doodle Jump game!&p[summary]=Can you beat me in this awesome recreation of Doodle Jump created in HTML5?';
-
-        // Fetch the telegram ID from localStorage (or wherever you store it)
-        const telegramId = userIdFromTelegram; // Получение userId из URL
-
-// Отправка данных на сервер
-if (telegramId) {
-    fetch('https://testforeveryoneback-production.up.railway.app/api/save-game-result', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            telegramId: telegramId,
-            score: score,
-            coins: coinsCollected,
-            timestamp: new Date().toISOString()
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            console.log('Game result saved successfully.');
-        } else {
-            console.error('Failed to save game result:', data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error saving game result:', error);
-    });
-} else {
-    console.error('Telegram ID not found!');
-}
-    }
-}
-
-function spawnMovingEnemy() {
-    if (movingEnemies.length < 1 && Math.random() < 0.05) { // Максимум 3 противника
-        movingEnemies.push(new MovingEnemy());
-    }
-}
-
-            // Функция обновления всех элементов
             function update() {
                 paintCanvas();
                 platformCalc();
@@ -872,11 +761,13 @@ function spawnMovingEnemy() {
                 playerCalc();
                 player.draw();
                 base.draw();
+
                 movingEnemies.forEach(function(enemy) {
-        enemy.update();
-        enemy.draw();
-    });
-    spawnMovingEnemy();
+                    enemy.update();
+                    enemy.draw();
+                });
+
+                spawnMovingEnemy();
                 updateScore();
             }
 
@@ -900,13 +791,11 @@ function spawnMovingEnemy() {
             flag = 0;
             position = 0;
             score = 0;
-            coinsCollected = 0; // Изменено: сброс монет
+            coinsCollected = 0;
 
             base = new Base();
             player = new Player();
             platform_broken_substitute = new Platform_broken_substitute();
-            movingEnemy = new MovingEnemy();
-
             movingEnemies = [];
 
             platforms = [];
@@ -931,7 +820,7 @@ function spawnMovingEnemy() {
             scoreText.innerHTML = "Вы набрали " + score + " очков!";
 
             var coinsText = document.getElementById("go_coins");
-            coinsText.innerHTML = "Вы собрали " + coinsCollected + " монет!"; // Изменено: обновление монет
+            coinsText.innerHTML = "Вы собрали " + coinsCollected + " монет!";
         }
 
         function hideGoMenu() {
@@ -951,7 +840,6 @@ function spawnMovingEnemy() {
         }
 
         // Запуск игры через меню
-        // Инициация запуска игры по нажатию на кнопку "Play"
         document.querySelector('.button').addEventListener('click', function() {
             init();
         });
