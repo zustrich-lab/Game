@@ -25,6 +25,7 @@ html, body {
     height: 100%;
     display: block;
     background: url(./Img/Background_game.png) top left no-repeat;
+    background-size: cover;
   }
 
 #scoreBoard {
@@ -98,12 +99,3 @@ h3 a {color: #5a5816}
  bottom: 10%;
  margin-left: -53px;
 }
-
-
-
-
-
-
-
-
-
