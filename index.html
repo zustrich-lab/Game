@@ -701,6 +701,63 @@
             }
 
             function gameOver() {
+    platforms.forEach(function(p, i) {
+        p.y -= 12;
+    });
+
+    // Сдвигаем движущихся противников вверх вместе с платформами
+    movingEnemies.forEach(function(enemy) {
+        enemy.y -= 12;
+        enemy.isStopped = true;
+    });
+
+    if(player.y > height/2 && flag === 0) {
+        player.y -= 8;
+        player.vy = 0;
+    } else if(player.y < height / 2) flag = 1;
+    else if(player.y + player.height > height) {
+        showGoMenu();
+        hideScore();
+        player.isDead = "lol";
+
+        var goScoreText = document.getElementById("go_score");
+        goScoreText.innerHTML = "Вы набрали " + score + " очков!";
+
+        var goCoinsText = document.getElementById("go_coins");
+        goCoinsText.innerHTML = "Вы собрали " + coinsCollected + " монет!";
+
+        // Отправка данных на сервер
+        const telegramId = userIdFromTelegram;
+
+        if (telegramId) {
+            fetch('https://testforeveryoneback-production.up.railway.app/api/save-game-result', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    telegramId: telegramId,
+                    score: score,
+                    coins: coinsCollected,
+                    timestamp: new Date().toISOString()
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Результаты игры успешно сохранены.');
+                } else {
+                    console.error('Не удалось сохранить результаты игры:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при сохранении результатов игры:', error);
+            });
+        } else {
+            console.error('Telegram ID не найден!');
+        }
+    }
+
                 platforms.forEach(function(p, i) {
                     p.y -= 12;
                 });
